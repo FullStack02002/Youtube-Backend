@@ -9,5 +9,8 @@
     "run": "nodemon src/index.js"
   },
   "author": "Gaj Singh Rathore",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "prettier": "^3.3.2"
+  }
 }
