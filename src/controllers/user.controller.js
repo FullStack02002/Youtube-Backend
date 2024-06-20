@@ -1,8 +1,9 @@
+
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { User } from "../models/user.model.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import { uploadOnCloudinary ,deleteFromCloudinary} from "../utils/cloudinary.js";
 
 const generateAccessandRefreshTokens = async (userId) => {
   try {
@@ -278,6 +279,10 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
   if (!avatarLocalPath) {
     throw new ApiError(400, "Avatar File is Missing");
   }
+
+  const previousAvatarUrl=req.user.avatar;
+
+  
   const avatar = await uploadOnCloudinary(avatarLocalPath);
 
   if (!avatar.url) {
@@ -296,6 +301,26 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     }
   ).select("-password");
 
+//const url = 'https://res.cloudinary.com/your_cloud_name/image/upload/v1574861160/sample_public_id.jpg';
+//url fomat is like this and we need to extract public id to delete previous avatar Image
+
+  if(previousAvatarUrl){
+    const getPublicIdFromUrl = (url) => {
+      const parts = url.split('/');
+      const filename = parts.pop();
+      const publicId = filename.split('.')[0];
+      return publicId;
+    };
+  }
+
+  //getting previousAvatarPublicId
+  const previousAvatarPublicId = getPublicIdFromUrl(previousAvatarUrl);
+
+  //deleting previous file which was uploaded on cloudinary
+  if(previousCoverImageUrl){
+    await deleteFromCloudinary(previousAvatarPublicId);
+  }
+
   return res
     .status(200)
     .json(new ApiResponse(200, user, "Avatar image Updated Succesfully"));
@@ -307,6 +332,8 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
   if (!coverImageLocalPath) {
     return new ApiError(400, "Cover Image File is Missing");
   }
+
+  const previousCoverImageUrl=req.user?.coverImage;
 
   const coverImage = await uploadOnCloudinary(coverImageLocalPath);
 
@@ -322,7 +349,21 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
     {
       new: true,
     }
-  );
+  ).select("-password");
+  if(previousCoverImageUrl){
+    const getPublicIdFromUrl = (url) => {
+      const parts = url.split('/');
+      const filename = parts.pop();
+      const publicId = filename.split('.')[0];
+      return publicId;
+    };
+  }
+
+  const previousCoverImagePublicId = getPublicIdFromUrl(previousCoverImageUrl);
+
+  if(previousCoverImagePublicId){
+    await deleteFromCloudinary(previousCoverImagePublicId);
+  }
 
   return res.status(200).json(new ApiResponse(200,user,"Cover Image Updated Successfully"))
 });

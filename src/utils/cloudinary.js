@@ -1,3 +1,27 @@
+/*
+When you upload a file to Cloudinary, the response contains various details about the uploaded resource, 
+including the public_id. Here's an example of an upload response:
+{
+  "public_id": "sample_public_id",
+  "version": 1574861160,
+  "signature": "abcd1234efgh5678ijkl9101",
+  "width": 500,
+  "height": 500,
+  "format": "jpg",
+  "resource_type": "image",
+  "created_at": "2019-11-27T23:26:00Z",
+  "tags": [],
+  "bytes": 123456,
+  "type": "upload",
+  "etag": "abcd1234efgh5678ijkl9101",
+  "placeholder": false,
+  "url": "http://res.cloudinary.com/your_cloud_name/image/upload/v1574861160/sample_public_id.jpg",
+  "secure_url": "https://res.cloudinary.com/your_cloud_name/image/upload/v1574861160/sample_public_id.jpg",
+  "access_mode": "public"
+}
+
+*/
+
 import {v2 as cloudinary } from "cloudinary"
 
 import fs from "fs"
@@ -31,4 +55,17 @@ cloudinary.config({
     }
 }
 
-export {uploadOnCloudinary}
+   const  deleteFromCloudinary=async(publicId)=>{
+    try{
+        if(!publicId) return null
+        const result=await cloudinary.uploader.destroy(publicId);
+        console.log("File Deleted Succesfully",result);
+    }
+
+    catch(error){
+        console.log("Error in deleting file from cloudinary",error);
+
+    }
+   }
+
+export {uploadOnCloudinary,deleteFromCloudinary}
