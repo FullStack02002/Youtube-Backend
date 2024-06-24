@@ -158,8 +158,8 @@ const logoutUser = asyncHandler(async (req, res) => {
   await User.findByIdAndUpdate(
     req.user._id,
     {
-      $set: {
-        refreshToken: undefined,
+      $unset: {
+        refreshToken: 1,
       },
     },
     {
@@ -229,6 +229,10 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 const changeCurrentPassword = asyncHandler(async (req, res) => {
   const { oldPassword, newPassword } = req.body;
 
+  if(!oldPassword || !newPassword){
+    throw new ApiError(400, "Please provide both old and new passwords");
+  }
+
   const user = await User.findById(req.user?._id);
 
   const isPasswordCorrect = await user.isPasswordCorrect(oldPassword);
@@ -254,7 +258,7 @@ const getCurrentUser = asyncHandler(async (req, res) => {
 const updateAccountDetails = asyncHandler(async (req, res) => {
   const { fullName, username } = req.body;
 
-  if (!(fullName || username)) {
+  if (!fullName || !username) {
     throw new ApiError(400, "All Fields Are Required");
   }
 
@@ -269,6 +273,10 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
     { new: true }
   ).select("-password");
 
+  if(!user){
+    throw new ApiError(404, "User Not Found");
+  }
+
   return res
     .status(200)
     .json(new ApiResponse(200, user, "Account details updated Succesfully"));
@@ -281,7 +289,7 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Avatar File is Missing");
   }
 
-  const previousAvatarUrl=req.user?.avatar;
+  const previousAvatarUrl=req.user?.avatar.url;
 
   
   const avatar = await uploadOnCloudinary(avatarLocalPath);
@@ -318,7 +326,7 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
   const previousAvatarPublicId = getPublicIdFromUrl(previousAvatarUrl);
 
   //deleting previous file which was uploaded on cloudinary
-  if(previousCoverImageUrl){
+  if(previousAvatarPublicId){
     await deleteFromCloudinary(previousAvatarPublicId);
   }
 
@@ -334,7 +342,7 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
     return new ApiError(400, "Cover Image File is Missing");
   }
 
-  const previousCoverImageUrl=req.user?.coverImage;
+  const previousCoverImageUrl=req.user?.coverImage.url;
 
   const coverImage = await uploadOnCloudinary(coverImageLocalPath);
 
