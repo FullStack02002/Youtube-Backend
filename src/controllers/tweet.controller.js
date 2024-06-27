@@ -4,6 +4,8 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { Tweet } from "../models/tweet.model.js";
 import mongoose, { isValidObjectId } from "mongoose";
 import { User } from "../models/user.model.js";
+import { Like } from "../models/like.model.js";
+import { Comment } from "../models/comment.model.js";
 
 //create tweet
 const createTweet = asyncHandler(async (req, res) => {
@@ -47,6 +49,16 @@ const deleteTweet = asyncHandler(async (req, res) => {
   }
 
   await Tweet.findByIdAndDelete(tweetId);
+
+  await Like.deleteMany({
+    tweet:tweetId,
+    likedBy:req.user?._id,
+  })
+
+  await Comment.deleteMany({
+    tweet:tweetId,
+    owner:req.user?._id
+  })
 
   return res
     .status(200)
