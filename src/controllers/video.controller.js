@@ -274,7 +274,7 @@ const getVideoById = asyncHandler(async (req, res) => {
 
   //add the video to watch history
 
-  await Video.findByIdAndUpdate(req.user?._id, {
+  await User.findByIdAndUpdate(req.user?._id, {
     $addToSet: {
       watchHistory: videoId,
     },
