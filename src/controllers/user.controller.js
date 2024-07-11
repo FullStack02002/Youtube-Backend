@@ -289,7 +289,7 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Avatar File is Missing");
   }
 
-  const previousAvatarUrl=req.user?.avatar.url;
+  const previousAvatarUrl=req.user?.avatar;
 
   
   const avatar = await uploadOnCloudinary(avatarLocalPath);
@@ -313,14 +313,15 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
 //const url = 'https://res.cloudinary.com/your_cloud_name/image/upload/v1574861160/sample_public_id.jpg';
 //url fomat is like this and we need to extract public id to delete previous avatar Image
 
-  if(previousAvatarUrl){
-    const getPublicIdFromUrl = (url) => {
+  
+    const  getPublicIdFromUrl = (url) => {
       const parts = url.split('/');
       const filename = parts.pop();
       const publicId = filename.split('.')[0];
+      console.log(publicId)
       return publicId;
     };
-  }
+  
 
   //getting previousAvatarPublicId
   const previousAvatarPublicId = getPublicIdFromUrl(previousAvatarUrl);
