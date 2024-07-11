@@ -343,7 +343,7 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
     return new ApiError(400, "Cover Image File is Missing");
   }
 
-  const previousCoverImageUrl=req.user?.coverImage.url;
+  const previousCoverImageUrl=req.user?.coverImage;
 
   const coverImage = await uploadOnCloudinary(coverImageLocalPath);
 
@@ -360,14 +360,14 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
       new: true,
     }
   ).select("-password");
-  if(previousCoverImageUrl){
+  
     const getPublicIdFromUrl = (url) => {
       const parts = url.split('/');
       const filename = parts.pop();
       const publicId = filename.split('.')[0];
       return publicId;
     };
-  }
+  
 
   const previousCoverImagePublicId = getPublicIdFromUrl(previousCoverImageUrl);
 
