@@ -89,7 +89,8 @@ const getAllVideos = asyncHandler(async (req, res) => {
         duration: 1,
         createdAt: 1,
         updatedAt: 1,
-        isPublished: 1
+        isPublished: 1,
+        views:1
       }
     }
   );
