@@ -99,7 +99,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
 
   const options = {
     page: parseInt(page, 10),
-    limit: parseInt(limit, 10)
+    limit: parseInt(limit, 9)
   };
 
   const video = await Video.aggregatePaginate(videoAggregate, options);
