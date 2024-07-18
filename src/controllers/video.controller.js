@@ -12,48 +12,12 @@ import {
 import { ApiResponse } from "../utils/ApiResponse.js";
 import mongoose, { isValidObjectId } from "mongoose";
 
-
 const getAllVideos = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query;
 
   const pipeline = [];
-
-  if (query) {
-    pipeline.push({
-      $search: {
-        index: "search-videos",
-        text: {
-          query: query,
-          path: ["title", "description"]
-        }
-      }
-    });
-  }
-
-  if (userId) {
-    if (!isValidObjectId(userId)) {
-      throw new ApiError(400, "Invalid userId");
-    }
-
-    pipeline.push({
-      $match: {
-        owner: new mongoose.Types.ObjectId(userId)
-      }
-    });
-  }
-
   // Fetch videos only that are set isPublished as true
   pipeline.push({ $match: { isPublished: true } });
-
-  if (sortBy && sortType) {
-    pipeline.push({
-      $sort: {
-        [sortBy]: sortType === "asc" ? 1 : -1
-      }
-    });
-  } else {
-    pipeline.push({ $sort: { createdAt: -1 } });
-  }
 
   pipeline.push(
     {
@@ -67,17 +31,17 @@ const getAllVideos = asyncHandler(async (req, res) => {
             $project: {
               username: 1,
               avatar: 1,
-            }
-          }
-        ]
-      }
+            },
+          },
+        ],
+      },
     },
     {
       $addFields: {
         owner: {
-          $first: "$ownerDetails"
-        }
-      }
+          $first: "$ownerDetails",
+        },
+      },
     },
     {
       $project: {
@@ -90,16 +54,50 @@ const getAllVideos = asyncHandler(async (req, res) => {
         createdAt: 1,
         updatedAt: 1,
         isPublished: 1,
-        views:1
-      }
+        views: 1,
+      },
     }
   );
+  if (query) {
+    pipeline.push({
+      $match: {
+        $or: [
+          { title: { $regex: query, $options: "i" } },
+          { description: { $regex: query, $options: "i" } },
+          { "owner.username": { $regex: query, $options: "i" } },
+        ],
+      },
+    });
+  }
+
+
+  if (userId) {
+    if (!isValidObjectId(userId)) {
+      throw new ApiError(400, "Invalid userId");
+    }
+
+    pipeline.push({
+      $match: {
+        owner: new mongoose.Types.ObjectId(userId),
+      },
+    });
+  }
+
+  if (sortBy && sortType) {
+    pipeline.push({
+      $sort: {
+        [sortBy]: sortType === "asc" ? 1 : -1,
+      },
+    });
+  } else {
+    pipeline.push({ $sort: { createdAt: -1 } });
+  }
 
   const videoAggregate = Video.aggregate(pipeline);
 
   const options = {
     page: parseInt(page, 10),
-    limit: parseInt(limit, 9)
+    limit: parseInt(limit, 9),
   };
 
   const video = await Video.aggregatePaginate(videoAggregate, options);
@@ -108,7 +106,6 @@ const getAllVideos = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, video, "Videos fetched successfully"));
 });
-
 
 const publishAVideo = asyncHandler(async (req, res) => {
   const { title, description } = req.body;
@@ -441,29 +438,35 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
     );
   }
 
-  const toggledPublishStatus=await Video.findByIdAndUpdate(videoId,{
-    $set:{
-      isPublished:!video.isPublished
-    }
-  },{new:true})
+  const toggledPublishStatus = await Video.findByIdAndUpdate(
+    videoId,
+    {
+      $set: {
+        isPublished: !video.isPublished,
+      },
+    },
+    { new: true }
+  );
 
-
-  if(!toggledPublishStatus){
-    throw new ApiError(500,"Error toggling publish status")
+  if (!toggledPublishStatus) {
+    throw new ApiError(500, "Error toggling publish status");
   }
   return res
-  .status(200)
-  .json(
+    .status(200)
+    .json(
       new ApiResponse(
-          200,
-          { isPublished: toggledPublishStatus.isPublished },
-          "Video publish toggled successfully"
+        200,
+        { isPublished: toggledPublishStatus.isPublished },
+        "Video publish toggled successfully"
       )
-  );
-  
+    );
 });
 
-
-
-
-export { publishAVideo, getVideoById, deleteVideo, updateVideo,getAllVideos ,togglePublishStatus};
+export {
+  publishAVideo,
+  getVideoById,
+  deleteVideo,
+  updateVideo,
+  getAllVideos,
+  togglePublishStatus,
+};
