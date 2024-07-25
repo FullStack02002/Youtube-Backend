@@ -5,7 +5,7 @@ import { allRepliesOfComment, createReply, deleteReply, updateReply } from "../c
 const router=Router();
 
 
-router.route('/').post(verifyJWT,createReply)
+router.route('/:commentId').post(verifyJWT,createReply)
 
 router.route('/:commentId').get(verifyJWT,allRepliesOfComment)
 

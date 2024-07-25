@@ -8,7 +8,8 @@ import { Like } from "../models/like.model.js";
 
 //create Reply
 const createReply = asyncHandler(async (req, res) => {
-  const { content, commentId } = req.body;
+  const {commentId}=req.params;
+  const { content } = req.body;
 
   if ([content, commentId].some((field) => field?.trim() === "")) {
     throw new ApiError(400, "all fields are required");

@@ -25,70 +25,131 @@ const getVideoComments = asyncHandler(async (req, res) => {
   if (!video) {
     throw new ApiError(404, "Video not found");
   }
-
-  const commentsAggregate = Comment.aggregate([
-    {
+  const commentsAggregate=Comment.aggregate(
+    [{
       $match: {
-        video: new mongoose.Types.ObjectId(videoId),
-      },
-    },
-    {
+        video:new mongoose.Types.ObjectId(videoId)
+      }
+    },{
+      $lookup: {
+        from: "replies",
+        localField: "_id",
+        foreignField: "comment",
+        as:"replies",
+        pipeline:[
+          {
+            $lookup:{
+              from:"users",
+              localField:"repliedBy",
+              foreignField:"_id",
+              as:"owner",
+              pipeline:[
+                {
+                  $project:{
+                    username:1,
+                    avatar:1,
+                    _id:1,
+                  }
+                }
+              ]
+              
+            }
+          },
+          {
+            $lookup:{
+              from:"likes",
+              localField:"_id",
+              foreignField:"reply",
+              as:"likes"
+            }
+          
+          },{
+            $addFields:{
+              owner:{
+                $first:"$owner"
+              },
+              likesCount:{
+                $size:"$likes"
+              },
+              isLiked:{
+                $cond:{
+                  if:{$in:[req.user?._id,"$likes.likedBy"]},
+                  then:true,
+                  else:false
+                }
+              }
+            }
+          },{
+            $project:{
+              likesCount:1,
+              isLiked:1,
+              owner:1,
+              content:1,
+              createdAt:1,
+              _id:1
+            }
+          }
+        ]
+      }
+    },{
       $lookup: {
         from: "users",
         localField: "owner",
         foreignField: "_id",
         as: "owner",
-        pipeline: [
+        pipeline:[
           {
-            $project: {
-              username: 1,
-              fullName: 1,
-              avatar: 1,
-            },
-          },
-        ],
-      },
-    },
-    {
+            $project:{
+              _id:1,
+              avatar:1,
+              username:1
+            }
+          }
+        ]
+      }
+    },{
       $lookup: {
         from: "likes",
         localField: "_id",
         foreignField: "comment",
-        as: "likes",
-      },
+        as: "likes"
+      }
     },
-    {
+     {
       $addFields: {
-        likesCount: {
-          $size: "$likes",
+        owner:{
+          $first:"$owner"
         },
-        owner: {
-          $first: "$owner",
+        likesCount:{
+          $size:"$likes"
         },
-        isLiked: {
-          $cond: {
-            if: { $in: [req.user?._id, "$likes.likedBy"] },
-            then: true,
-            else: false,
-          },
-        },
-      },
-    },
-    {
-      $sort: {
-        createdAt: -1,
-      },
-    },
-    {
-      $project: {
-        content: 1,
-        createdAt: 1,
-        owner: 1,
-        likesCount: 1,
-        isLiked: 1,
-      },
-    },
-  ]);
+        isLiked:{
+          $cond:{
+                  if:{$in:[req.user?._id,"$likes.likedBy"]},
+                  then:true,
+                  else:false
+                }
+        }
+      }
+    },{
+       $project: {
+         _id:1,
+         owner:1,
+         replies:1,
+         content:1,
+         createdAt:1,
+         likesCount:1,
+         isLiked:1
+       }
+    },{
+       $sort: {
+         createdAt: -1
+       }
+    }]
+  )
+
+
+
   const options = {
     page: parseInt(page, 10),
     limit: parseInt(limit, 10),
