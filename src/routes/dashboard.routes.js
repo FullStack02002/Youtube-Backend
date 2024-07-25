@@ -7,7 +7,7 @@ const router=Router();
 
 
 router.route("/stats").get(verifyJWT,getChannelStats);
-router.route("/videos").get(verifyJWT,getChannelVideos);
+router.route("/videos/").get(verifyJWT,getChannelVideos);
 
 
 

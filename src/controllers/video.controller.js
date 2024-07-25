@@ -19,6 +19,18 @@ const getAllVideos = asyncHandler(async (req, res) => {
   // Fetch videos only that are set isPublished as true
   pipeline.push({ $match: { isPublished: true } });
 
+  if (userId) {
+    if (!isValidObjectId(userId)) {
+      throw new ApiError(400, "Invalid userId");
+    }
+
+    pipeline.push({
+      $match: {
+        owner: new mongoose.Types.ObjectId(userId),
+      },
+    });
+  }
+
   pipeline.push(
     {
       $lookup: {
@@ -71,17 +83,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
   }
 
 
-  if (userId) {
-    if (!isValidObjectId(userId)) {
-      throw new ApiError(400, "Invalid userId");
-    }
 
-    pipeline.push({
-      $match: {
-        owner: new mongoose.Types.ObjectId(userId),
-      },
-    });
-  }
 
   if (sortBy && sortType) {
     pipeline.push({
