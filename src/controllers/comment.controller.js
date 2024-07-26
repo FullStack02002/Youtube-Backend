@@ -6,7 +6,7 @@ import { Tweet } from "../models/tweet.model.js";
 import { Video } from "../models/video.model.js";
 import { Comment } from "../models/comment.model.js";
 import { Like } from "../models/like.model.js";
-import mongoose, { Schema } from "mongoose";
+import mongoose from "mongoose";
 
 
 
@@ -30,68 +30,71 @@ const getVideoComments = asyncHandler(async (req, res) => {
       $match: {
         video:new mongoose.Types.ObjectId(videoId)
       }
-    },{
-      $lookup: {
-        from: "replies",
-        localField: "_id",
-        foreignField: "comment",
-        as:"replies",
-        pipeline:[
-          {
-            $lookup:{
-              from:"users",
-              localField:"repliedBy",
-              foreignField:"_id",
-              as:"owner",
-              pipeline:[
-                {
-                  $project:{
-                    username:1,
-                    avatar:1,
-                    _id:1,
-                  }
-                }
-              ]
+    },
+    // {
+    //   $lookup: {
+    //     from: "replies",
+    //     localField: "_id",
+    //     foreignField: "comment",
+    //     as:"replies",
+    //     pipeline:[
+    //       {
+    //         $lookup:{
+    //           from:"users",
+    //           localField:"repliedBy",
+    //           foreignField:"_id",
+    //           as:"owner",
+    //           pipeline:[
+    //             {
+    //               $project:{
+    //                 username:1,
+    //                 avatar:1,
+    //                 _id:1,
+    //               }
+    //             }
+    //           ]
               
-            }
-          },
-          {
-            $lookup:{
-              from:"likes",
-              localField:"_id",
-              foreignField:"reply",
-              as:"likes"
-            }
+    //         }
+    //       },
+    //       {
+    //         $lookup:{
+    //           from:"likes",
+    //           localField:"_id",
+    //           foreignField:"reply",
+    //           as:"likes"
+    //         }
           
-          },{
-            $addFields:{
-              owner:{
-                $first:"$owner"
-              },
-              likesCount:{
-                $size:"$likes"
-              },
-              isLiked:{
-                $cond:{
-                  if:{$in:[req.user?._id,"$likes.likedBy"]},
-                  then:true,
-                  else:false
-                }
-              }
-            }
-          },{
-            $project:{
-              likesCount:1,
-              isLiked:1,
-              owner:1,
-              content:1,
-              createdAt:1,
-              _id:1
-            }
-          }
-        ]
-      }
-    },{
+    //       },{
+    //         $addFields:{
+    //           owner:{
+    //             $first:"$owner"
+    //           },
+    //           likesCount:{
+    //             $size:"$likes"
+    //           },
+    //           isLiked:{
+    //             $cond:{
+    //               if:{$in:[req.user?._id,"$likes.likedBy"]},
+    //               then:true,
+    //               else:false
+    //             }
+    //           }
+    //         }
+    //       },{
+    //         $project:{
+    //           likesCount:1,
+    //           isLiked:1,
+    //           owner:1,
+    //           content:1,
+    //           createdAt:1,
+    //           _id:1
+    //         }
+    //       }
+    //     ]
+    //   }
+    // },
+    
+    {
       $lookup: {
         from: "users",
         localField: "owner",
