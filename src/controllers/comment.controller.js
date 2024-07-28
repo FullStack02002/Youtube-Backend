@@ -213,9 +213,7 @@ const deleteComment = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Comment not Found");
   }
 
-  if (comment?.owner.toString() !== req.user?._id.toString()) {
-    throw new ApiError(400, "only owner of comment can delete this comment");
-  }
+  
 
   await Comment.findByIdAndDelete(commentId);
 
