@@ -2,10 +2,11 @@ import { isValidObjectId } from "mongoose";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-import { Tweet } from "../models/tweet.model.js";
 import { Video } from "../models/video.model.js";
 import { Comment } from "../models/comment.model.js";
 import { Like } from "../models/like.model.js";
+import { Reply } from "../models/reply.model.js";
+
 import mongoose from "mongoose";
 
 
@@ -31,69 +32,8 @@ const getVideoComments = asyncHandler(async (req, res) => {
         video:new mongoose.Types.ObjectId(videoId)
       }
     },
-    // {
-    //   $lookup: {
-    //     from: "replies",
-    //     localField: "_id",
-    //     foreignField: "comment",
-    //     as:"replies",
-    //     pipeline:[
-    //       {
-    //         $lookup:{
-    //           from:"users",
-    //           localField:"repliedBy",
-    //           foreignField:"_id",
-    //           as:"owner",
-    //           pipeline:[
-    //             {
-    //               $project:{
-    //                 username:1,
-    //                 avatar:1,
-    //                 _id:1,
-    //               }
-    //             }
-    //           ]
-              
-    //         }
-    //       },
-    //       {
-    //         $lookup:{
-    //           from:"likes",
-    //           localField:"_id",
-    //           foreignField:"reply",
-    //           as:"likes"
-    //         }
-          
-    //       },{
-    //         $addFields:{
-    //           owner:{
-    //             $first:"$owner"
-    //           },
-    //           likesCount:{
-    //             $size:"$likes"
-    //           },
-    //           isLiked:{
-    //             $cond:{
-    //               if:{$in:[req.user?._id,"$likes.likedBy"]},
-    //               then:true,
-    //               else:false
-    //             }
-    //           }
-    //         }
-    //       },{
-    //         $project:{
-    //           likesCount:1,
-    //           isLiked:1,
-    //           owner:1,
-    //           content:1,
-    //           createdAt:1,
-    //           _id:1
-    //         }
-    //       }
-    //     ]
-    //   }
-    // },
-    
+   
+ 
     {
       $lookup: {
         from: "users",
@@ -199,6 +139,7 @@ const createComment = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(201, comment, "Comment Added Succesfully"));
 });
+
 //delete comment
 const deleteComment = asyncHandler(async (req, res) => {
   const { commentId } = req.params;
@@ -219,8 +160,12 @@ const deleteComment = asyncHandler(async (req, res) => {
 
   await Like.deleteMany({
     comment: commentId,
-    likedBy: req.user?._id,
   });
+
+  await Reply.deleteMany({
+    comment: commentId,
+
+  })
 
   return res
     .status(200)

@@ -56,7 +56,6 @@ const deleteReply = asyncHandler(async (req, res) => {
 
   Like.deleteMany({
     reply: replyId,
-    likedBy: req.user?._id,
   });
   return res
     .status(200)
@@ -160,7 +159,7 @@ const allRepliesOfComment=asyncHandler(async(req,res)=>{
             }
         },{
             $sort:{
-                createdAt:-1
+                createdAt:1
             }
         },{
             $project:{
