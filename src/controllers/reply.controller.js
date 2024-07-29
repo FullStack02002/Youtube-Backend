@@ -168,7 +168,7 @@ const allRepliesOfComment=asyncHandler(async(req,res)=>{
                 createdAt:1,
                 owner:1,
                 isLiked:1,
-                LikesCount:1
+                likesCount:1
             }
         }
     ])
