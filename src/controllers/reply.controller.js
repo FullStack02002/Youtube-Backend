@@ -137,14 +137,14 @@ const allRepliesOfComment=asyncHandler(async(req,res)=>{
             }
         },{
             $lookup:{
-                from:"Like",
+                from:"likes",
                 localField:"_id",
                 foreignField:"reply",
                 as:"likes"
             }
         },{
             $addFields:{
-                LikesCount:{
+                likesCount:{
                     $size:"$likes"
                 },
                 owner:{
