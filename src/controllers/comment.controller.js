@@ -9,13 +9,11 @@ import { Reply } from "../models/reply.model.js";
 
 import mongoose from "mongoose";
 
-
-
 //get Video Comments
 
 const getVideoComments = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
-  const { page = 1, limit = 10 } = req.query;
+  const { page = 1, limit = 10, sortBy, sortType } = req.query;
 
   if (!isValidObjectId(videoId)) {
     throw new ApiError(400, "Invalid videoId");
@@ -26,72 +24,81 @@ const getVideoComments = asyncHandler(async (req, res) => {
   if (!video) {
     throw new ApiError(404, "Video not found");
   }
-  const commentsAggregate=Comment.aggregate(
-    [{
+
+  const pipeline = [];
+  pipeline.push(
+    {
       $match: {
-        video:new mongoose.Types.ObjectId(videoId)
-      }
+        video: new mongoose.Types.ObjectId(videoId),
+      },
     },
-   
- 
+
     {
       $lookup: {
         from: "users",
         localField: "owner",
         foreignField: "_id",
         as: "owner",
-        pipeline:[
+        pipeline: [
           {
-            $project:{
-              _id:1,
-              avatar:1,
-              username:1
-            }
-          }
-        ]
-      }
-    },{
+            $project: {
+              _id: 1,
+              avatar: 1,
+              username: 1,
+            },
+          },
+        ],
+      },
+    },
+    {
       $lookup: {
         from: "likes",
         localField: "_id",
         foreignField: "comment",
-        as: "likes"
-      }
+        as: "likes",
+      },
     },
-     {
+    {
       $addFields: {
-        owner:{
-          $first:"$owner"
+        owner: {
+          $first: "$owner",
         },
-        likesCount:{
-          $size:"$likes"
+        likesCount: {
+          $size: "$likes",
         },
-        isLiked:{
-          $cond:{
-                  if:{$in:[req.user?._id,"$likes.likedBy"]},
-                  then:true,
-                  else:false
-                }
-        }
-      }
-    },{
-       $project: {
-         _id:1,
-         owner:1,
-         replies:1,
-         content:1,
-         createdAt:1,
-         likesCount:1,
-         isLiked:1
-       }
-    },{
-       $sort: {
-         createdAt: -1
-       }
-    }]
-  )
+        isLiked: {
+          $cond: {
+            if: { $in: [req.user?._id, "$likes.likedBy"] },
+            then: true,
+            else: false,
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        _id: 1,
+        owner: 1,
+        replies: 1,
+        content: 1,
+        createdAt: 1,
+        likesCount: 1,
+        isLiked: 1,
+      },
+    }
+  );
 
+  if (sortBy && sortType) {
+    pipeline.push({
+      $sort: {
+        [sortBy]: sortType === "asc" ? 1 : -1,
+      },
+    });
+  } else {
+    pipeline.push({ $sort: { createdAt: 1 } });
+  }
 
+  const commentsAggregate = Comment.aggregate(pipeline);
 
   const options = {
     page: parseInt(page, 10),
@@ -154,8 +161,6 @@ const deleteComment = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Comment not Found");
   }
 
-  
-
   await Comment.findByIdAndDelete(commentId);
 
   await Like.deleteMany({
@@ -164,8 +169,7 @@ const deleteComment = asyncHandler(async (req, res) => {
 
   await Reply.deleteMany({
     comment: commentId,
-
-  })
+  });
 
   return res
     .status(200)
@@ -213,7 +217,5 @@ const updateComment = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, updateComment, "Comment Updated Succesfully"));
 });
-
-
 
 export { createComment, deleteComment, updateComment, getVideoComments };

@@ -48,9 +48,8 @@ const deleteReply = asyncHandler(async (req, res) => {
   if (!reply) {
     throw new ApiError(404, "reply not found");
   }
-  if (reply.repliedBy.toString() !== req.user?._id.toString()) {
-    throw new ApiError(403, "you are not allowed to delete this reply");
-  }
+  
+  
 
   await Reply.findByIdAndDelete(replyId);
 
