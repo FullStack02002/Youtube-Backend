@@ -41,6 +41,7 @@ const userSchema = new Schema(
     },
     coverImage:{
       type: String,
+      required:[true,"coverImage is required"]
     },
     refreshToken: {
       type: String,

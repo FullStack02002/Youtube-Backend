@@ -41,7 +41,8 @@ cloudinary.config({
         if(!localFilePath) return null
         //upload the file on cloudinary
         const response=await cloudinary.uploader.upload(localFilePath,{
-            resource_type:"auto"
+            resource_type:"auto",
+            secure:true,
         })
         //file has been uploaded successfully
         console.log("file is uploaded on cloudinary",response.url);
@@ -62,7 +63,8 @@ const deleteFromCloudinary = async (public_id, resource_type="image") => {
 
         //delete file from cloudinary
         const result = await cloudinary.uploader.destroy(public_id, {
-            resource_type: `${resource_type}`
+            resource_type: `${resource_type}`,
+            secure:true,
         });
     } catch (error) {
         return error;

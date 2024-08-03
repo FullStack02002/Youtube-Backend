@@ -4,6 +4,8 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { User } from "../models/user.model.js";
 import { uploadOnCloudinary ,deleteFromCloudinary} from "../utils/cloudinary.js";
+import { ensureHttps } from "../utils/ensureHttps.js";
+
 import mongoose from "mongoose";
 
 const generateAccessandRefreshTokens = async (userId) => {
@@ -78,8 +80,8 @@ const registerUser = asyncHandler(async (req, res) => {
 
   const user = await User.create({
     fullName,
-    avatar: avatar.url,
-    coverImage: coverImage?.url || "",
+    avatar: ensureHttps(avatar.url),
+    coverImage: ensureHttps(coverImage.url),
     email,
     password,
     username: username.toLowerCase(),
