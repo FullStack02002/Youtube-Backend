@@ -134,7 +134,9 @@ const loginUser = asyncHandler(async (req, res) => {
 
   const options = {
     httpOnly: true,
-    secure: true,
+    secure: process.env.NODE_ENV === 'production', // Set to true in production
+    sameSite: 'Strict', // Adjust as needed (Strict, Lax, None)
+    path: '/' // Ensure cookies are sent across your site
   };
 
   return res
@@ -168,7 +170,9 @@ const logoutUser = asyncHandler(async (req, res) => {
   );
   const options = {
     httpOnly: true,
-    secure: true,
+    secure: process.env.NODE_ENV === 'production', // Set to true in production
+    sameSite: 'Strict', // Adjust as needed (Strict, Lax, None)
+    path: '/' // Ensure cookies are cleared across your site
   };
 
   return res
@@ -252,7 +256,7 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
 const getCurrentUser = asyncHandler(async (req, res) => {
   return res
     .status(200)
-    .json(new ApiResponse(200, req.user, "User fetched Succesfully"));
+    .json(new ApiResponse(200, req?.user, "User fetched Succesfully"));
 });
 
 const updateAccountDetails = asyncHandler(async (req, res) => {
