@@ -68,6 +68,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
         updatedAt: 1,
         isPublished: 1,
         views: 1,
+        commentSection:1,
       },
     }
   );
@@ -145,6 +146,7 @@ const publishAVideo = asyncHandler(async (req, res) => {
     duration: videoFile.duration,
     owner: req.user?._id,
     isPublished: false,
+    commentSection:true,
   });
 
   const videoUploaded = await Video.findById(video?._id);
@@ -259,6 +261,7 @@ const getVideoById = asyncHandler(async (req, res) => {
         likesCount: 1,
         isLiked: 1,
         thumbnail:1,
+        commentSection:1,
       },
     },
   ]);
@@ -467,6 +470,40 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
     );
 });
 
+const toggleCommentSection=asyncHandler(async(req,res)=>{
+  const {videoId}=req.params;
+  if(!isValidObjectId(videoId)){
+    throw new ApiError(400,"Invalid video Id");
+    }
+
+    const video=await Video.findById(videoId);
+    if(!video){
+      throw new ApiError(404,"Video not found");
+    }
+
+    if(video?.owner.toString()!==req.user?._id.toString()){
+      throw new ApiError(400,"You cant toggle comment section as you are not an owner");
+    }
+
+    const toggleCommentSection=await Video.findByIdAndUpdate(videoId,{
+      $set:{
+        commentSection:!video.commentSection
+      }
+    },{new:true})
+
+    if(!toggleCommentSection){
+      throw new ApiError(500,"Error toggling comment section");
+    }
+
+    return res.status(200).json(new ApiResponse(
+      200,
+      {commentSection:toggleCommentSection.commentSection},
+      "Comment section toggled successfully"
+    ))
+
+
+})
+
 export {
   publishAVideo,
   getVideoById,
@@ -474,4 +511,5 @@ export {
   updateVideo,
   getAllVideos,
   togglePublishStatus,
+  toggleCommentSection,
 };

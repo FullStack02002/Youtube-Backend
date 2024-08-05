@@ -6,6 +6,7 @@ import {
   getVideoById,
   publishAVideo,
   togglePublishStatus,
+  toggleCommentSection,
   updateVideo,
 } from "../controllers/video.controller.js";
 
@@ -30,7 +31,8 @@ router
   .patch(verifyJWT,upload.single("thumbnail"),updateVideo)
 
 
-  router.route("/toggle/publish/:videoId").patch(verifyJWT,togglePublishStatus)
+  router.route("/toggle/publish/:videoId").patch(verifyJWT,togglePublishStatus);
+  router.route("/toggle/comment/:videoId").patch(verifyJWT,toggleCommentSection);
   
 
 export default router;
