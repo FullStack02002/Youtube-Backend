@@ -14,6 +14,10 @@ app.use(express.urlencoded({extended:true,limit:"50mb"}))
 app.use(express.static("public"))
 app.use(cookieParser())
 
+app.get('/',(req,res)=>{
+    res.send("Api Running")
+})
+
 //route import
 import userRouter from './routes/user.routes.js'
 import videoRouter from './routes/video.routes.js'
