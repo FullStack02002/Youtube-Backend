@@ -8,14 +8,13 @@ import { Video } from "../models/video.model.js";
 
 //create Playlist
 const createPlaylist = asyncHandler(async (req, res) => {
-  const { name, description } = req.body;
-  if ([name, description].some((field) => field?.trim() == "")) {
-    throw new ApiError(400, "Please provide all fields");
+  const { name} = req.body;
+  if(!name){
+    throw new ApiError(400,"name is required");
   }
 
   const playlist = await Playlist.create({
     name,
-    description,
     owner: req.user?._id,
   });
 
@@ -31,7 +30,7 @@ const createPlaylist = asyncHandler(async (req, res) => {
 //update Playlist
 const updatePlaylist = asyncHandler(async (req, res) => {
   const { playlistId } = req.params;
-  const { name, description } = req.body;
+  const { name} = req.body;
 
   if (!isValidObjectId(playlistId)) {
     throw new ApiError(400, "Invalid Playlist Id");
@@ -53,8 +52,7 @@ const updatePlaylist = asyncHandler(async (req, res) => {
     playlistId,
     {
       $set: {
-        name,
-        description,
+        name
       },
     },
     {
@@ -337,10 +335,8 @@ const getUserPlaylist=asyncHandler(async(req,res)=>{
             $addFields:{
                 totalVideos:{
                     $size:"$videos"
-                },
-                totalViews:{
-                    $sum:"$videos.views"
                 }
+               
             }
         },{
             $project:{
@@ -348,7 +344,6 @@ const getUserPlaylist=asyncHandler(async(req,res)=>{
                 name:1,
                 description:1,
                 totalVideos:1,
-                totalViews:1,
                 updatedAt:1
             }
         }

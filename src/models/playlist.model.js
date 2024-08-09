@@ -6,10 +6,6 @@ const playlistSchema = new Schema(
             type: String,
             required: [true, "name is required"]
         },
-        description: {
-            type: String,
-            required: [true, "description is required"]
-        },
         videos: [
             {
                 type: Schema.Types.ObjectId,
