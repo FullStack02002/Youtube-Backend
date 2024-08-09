@@ -2,15 +2,15 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { Playlist } from "../models/playlist.model.js";
-import mongoose, { isValidObjectId } from "mongoose";
-import {User} from "../models/user.model.js"
+import mongoose, { isValidObjectId, Mongoose } from "mongoose";
+import { User } from "../models/user.model.js";
 import { Video } from "../models/video.model.js";
 
 //create Playlist
 const createPlaylist = asyncHandler(async (req, res) => {
-  const { name} = req.body;
-  if(!name){
-    throw new ApiError(400,"name is required");
+  const { name } = req.body;
+  if (!name) {
+    throw new ApiError(400, "name is required");
   }
 
   const playlist = await Playlist.create({
@@ -30,7 +30,7 @@ const createPlaylist = asyncHandler(async (req, res) => {
 //update Playlist
 const updatePlaylist = asyncHandler(async (req, res) => {
   const { playlistId } = req.params;
-  const { name} = req.body;
+  const { name } = req.body;
 
   if (!isValidObjectId(playlistId)) {
     throw new ApiError(400, "Invalid Playlist Id");
@@ -52,7 +52,7 @@ const updatePlaylist = asyncHandler(async (req, res) => {
     playlistId,
     {
       $set: {
-        name
+        name,
       },
     },
     {
@@ -100,7 +100,7 @@ const deletePlaylist = asyncHandler(async (req, res) => {
 
 //add video to playlist
 const addVideotoPlaylist = asyncHandler(async (req, res) => {
-  const { videoId,playlistId } = req.params;
+  const { videoId, playlistId } = req.params;
 
   if (!isValidObjectId(playlistId)) {
     throw new ApiError(400, "Invalid Playlist Id");
@@ -238,7 +238,7 @@ const getPlaylistById = asyncHandler(async (req, res) => {
             $project: {
               username: 1,
               fullName: 1,
-              avatar:1,
+              avatar: 1,
             },
           },
         ],
@@ -260,7 +260,7 @@ const getPlaylistById = asyncHandler(async (req, res) => {
               description: 1,
               duration: 1,
               createdAt: 1,
-              views:1
+              views: 1,
             },
           },
         ],
@@ -298,62 +298,84 @@ const getPlaylistById = asyncHandler(async (req, res) => {
       },
     },
   ]);
-  
 
-  return res.status(200).json(new ApiResponse(200,playlistAggregate,"Playlist Fetched Succesfully"))
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, playlistAggregate, "Playlist Fetched Succesfully")
+    );
 });
 
 //get User Playlist
 
-const getUserPlaylist=asyncHandler(async(req,res)=>{
-    const {userId}=req.params;
+const getUserPlaylist = asyncHandler(async (req, res) => {
+  const { userId } = req.params;
 
-    if(!isValidObjectId(userId)){
-        throw new ApiError(400,"Invalid Object Id")
-    }
+  if (!isValidObjectId(userId)) {
+    throw new ApiError(400, "Invalid Object Id");
+  }
 
-    const user=await User.findById(userId);
+  const user = await User.findById(userId);
 
-    if(!user){
-        throw new ApiError(404,"User Not Found")
-    }
+  if (!user) {
+    throw new ApiError(404, "User Not Found");
+  }
 
+  const playlistAggregate = await Playlist.aggregate([
+    {
+      $match: {
+        owner: new mongoose.Types.ObjectId(userId),
+      },
+    },
+    {
+      $lookup: {
+        from: "videos",
+        localField: "videos",
+        foreignField: "_id",
+        as: "videos",
+        pipeline: [
+          {
+            $project: {
+              _id: 1,
+            },
+          },
+        ],
+      },
+    },
+    {
+      $addFields: {
+        totalVideos: {
+          $size: "$videos",
+        },
+      },
+    },
+    {
+      $project: {
+        totalVideos: 1,
+        _id: 1,
+        name: 1,
+        videos: 1,
+      },
+    },
+  ]);
 
-    const playlistAggregate=await Playlist.aggregate([
-        {
-            $match:{
-                owner:new mongoose.Types.ObjectId(userId)
-            }
-        },{
-            $lookup:{
-                from:"videos",
-                localField:"videos",
-                foreignField:"_id",
-                as:"videos"
-            }
-        },{
-            $addFields:{
-                totalVideos:{
-                    $size:"$videos"
-                }
-               
-            }
-        },{
-            $project:{
-                _id:1,
-                name:1,
-                description:1,
-                totalVideos:1,
-                updatedAt:1
-            }
-        }
-    ])
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        playlistAggregate,
+        "User Playlist Fetched Succesfully"
+      )
+    );
+});
 
-    return res.status(200).json(new ApiResponse(200,playlistAggregate,"User Playlist Fetched Succesfully"))
-})
-
-export{createPlaylist,deletePlaylist,updatePlaylist,addVideotoPlaylist,deleteVideoFromPlaylist,getPlaylistById,getUserPlaylist}
-
-
-
-
+export {
+  createPlaylist,
+  deletePlaylist,
+  updatePlaylist,
+  addVideotoPlaylist,
+  deleteVideoFromPlaylist,
+  getPlaylistById,
+  getUserPlaylist,
+};
