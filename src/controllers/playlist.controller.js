@@ -337,6 +337,7 @@ const getUserPlaylist = asyncHandler(async (req, res) => {
           {
             $project: {
               _id: 1,
+              thumbnail:1,
             },
           },
         ],

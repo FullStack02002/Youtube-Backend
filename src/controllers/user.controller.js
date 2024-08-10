@@ -309,7 +309,7 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     req.user?._id,
     {
       $set: {
-        avatar: avatar.url,
+        avatar: ensureHttps(avatar.url),
       },
     },
     {
@@ -361,7 +361,7 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
   const user = await User.findByIdAndUpdate(
     req.user?._id,
     {
-      $set: {coverImage:coverImage.url}
+      $set: {coverImage:ensureHttps(coverImage.url)}
     },
     {
       new: true,
