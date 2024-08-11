@@ -2,9 +2,10 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { Playlist } from "../models/playlist.model.js";
-import mongoose, { isValidObjectId, Mongoose } from "mongoose";
+import mongoose, { isValidObjectId } from "mongoose";
 import { User } from "../models/user.model.js";
 import { Video } from "../models/video.model.js";
+import { PlaylistVideo } from "../models/playlistVideomodel.js";
 
 //create Playlist
 const createPlaylist = asyncHandler(async (req, res) => {
@@ -78,7 +79,7 @@ const deletePlaylist = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid Playlist Id");
   }
 
-  const playlist = await Playlist.findByIdAndUpdate(playlistId);
+  const playlist = await Playlist.findById(playlistId);
 
   if (!playlist) {
     throw new ApiError(404, "Playlist not found");
@@ -92,6 +93,10 @@ const deletePlaylist = asyncHandler(async (req, res) => {
   }
 
   await Playlist.findByIdAndDelete(playlistId);
+
+  await PlaylistVideo.deleteMany({
+    playlistId
+  })
 
   return res
     .status(200)
@@ -124,28 +129,30 @@ const addVideotoPlaylist = asyncHandler(async (req, res) => {
     );
   }
 
-  const updatedPlaylist = await Playlist.findByIdAndUpdate(
-    playlistId,
-    {
-      $addToSet: {
-        videos: videoId,
-      },
-    },
-    { new: true }
-  );
+  // const updatedPlaylist = await Playlist.findByIdAndUpdate(
+  //   playlistId,
+  //   {
 
-  if (!updatePlaylist) {
+  //       $addToSet: {
+  //       videos: videoId,
+  //     },
+  //   },
+  //   { new: true }
+  // );
+
+  const playlistVideo = await PlaylistVideo.create({
+    playlistId,
+    videoId,
+  });
+
+  if (!playlistVideo) {
     throw new ApiError(500, "Video not added to playlist Try Again");
   }
 
   return res
     .status(200)
     .json(
-      new ApiResponse(
-        200,
-        updatedPlaylist,
-        "Video Added To Playlist Succesfully"
-      )
+      new ApiResponse(200, playlistId, "Video Added To Playlist Succesfully")
     );
 });
 
@@ -181,14 +188,13 @@ const deleteVideoFromPlaylist = asyncHandler(async (req, res) => {
     );
   }
 
-  const updatedPlaylist = await Playlist.findByIdAndUpdate(
+  await PlaylistVideo.deleteMany({
+    playlistId: playlistId,
+    videoId: videoId,
+  })
+
+  const updatedPlaylist = await Playlist.findById(
     playlistId,
-    {
-      $pull: { videos: videoId },
-    },
-    {
-      new: true,
-    }
   );
 
   if (!updatedPlaylist) {
@@ -229,6 +235,81 @@ const getPlaylistById = asyncHandler(async (req, res) => {
     },
     {
       $lookup: {
+        from: "playlistvideos",
+        localField: "_id",
+        foreignField: "playlistId",
+        as: "videos",
+        pipeline: [
+          {
+            $lookup: {
+              from: "videos",
+              localField: "videoId",
+              foreignField: "_id",
+              as: "video",
+              pipeline: [
+                {
+                  $lookup: {
+                    from: "users",
+                    localField: "owner",
+                    foreignField: "_id",
+                    as: "owner",
+                    pipeline: [
+                      {
+                        $project: {
+                          _id: 1,
+                          username: 1,
+                          fullName: 1,
+                          avatar: 1,
+                        },
+                      },
+                    ],
+                  },
+                },
+                {
+                  $addFields: {
+                    owner: {
+                      $first: "$owner",
+                    },
+                  },
+                },
+                {
+                  $project: {
+                    _id: 1,
+                    owner: 1,
+                    thumbnail: 1,
+                    title: 1,
+                    createdAt: 1,
+                    duration: 1,
+                    views: 1,
+                  },
+                },
+              ],
+            },
+          },
+          {
+            $addFields: {
+              video: {
+                $first: "$video",
+              },
+            },
+          },
+          {
+            $project: {
+              video: 1,
+              createdAt: 1,
+              _id: 0,
+            },
+          },
+          {
+            $sort: {
+              createdAt: -1, // Sort videos by createdAt in descending order
+            },
+          },
+        ],
+      },
+    },
+    {
+      $lookup: {
         from: "users",
         localField: "owner",
         foreignField: "_id",
@@ -236,6 +317,7 @@ const getPlaylistById = asyncHandler(async (req, res) => {
         pipeline: [
           {
             $project: {
+              _id: 1,
               username: 1,
               fullName: 1,
               avatar: 1,
@@ -245,84 +327,10 @@ const getPlaylistById = asyncHandler(async (req, res) => {
       },
     },
     {
-      $lookup: {
-        from: "videos",
-        localField: "videos",
-        foreignField: "_id",
-        as: "videos",
-        pipeline: [
-          {
-            $lookup:{
-              from:"users",
-              localField:"owner",
-              foreignField:"_id",
-              as:"owner",
-              pipeline:[
-                {
-                  $project:{
-                    _id:1,
-                    username:1,
-                    fullName:1,
-                    avatar:1
-                  }
-                }
-              ]
-             
-            }
-          },
-          {
-            $addFields:{
-              owner:{
-                $first:"$owner"
-              }
-            }
-          },
-          
-          {
-            $project: {
-              _id: 1,
-              videoFile: 1,
-              thumbnail: 1,
-              title: 1,
-              description: 1,
-              duration: 1,
-              createdAt: 1,
-              views: 1,
-              owner:1
-            },
-          },
-        ],
-      },
-    },
-    {
-      $sort: {
-        createdAt: -1,
-      },
-    },
-    {
       $addFields: {
-        totalVideos: {
-          $size: "$videos",
-        },
-        totalViews: {
-          $sum: "$videos.views",
-        },
         owner: {
           $first: "$owner",
         },
-      },
-    },
-    {
-      $project: {
-        _id: 1,
-        name: 1,
-        description: 1,
-        owner: 1,
-        createdAt: 1,
-        updatedAt: 1,
-        videos: 1,
-        totalVideos: 1,
-        totalViews: 1,
       },
     },
   ]);
@@ -357,15 +365,44 @@ const getUserPlaylist = asyncHandler(async (req, res) => {
     },
     {
       $lookup: {
-        from: "videos",
-        localField: "videos",
-        foreignField: "_id",
+        from: "playlistvideos",
+        localField: "_id",
+        foreignField: "playlistId",
         as: "videos",
         pipeline: [
           {
+            $lookup: {
+              from: "videos",
+              localField: "videoId",
+              foreignField: "_id",
+              as: "video",
+              pipeline: [
+                {
+                  $project: {
+                    _id: 1,
+                    thumbnail: 1,
+                  },
+                },
+              ],
+            },
+          },
+          {
+            $addFields: {
+              video: {
+                $first: "$video",
+              },
+            },
+          },
+          {
             $project: {
-              _id: 1,
-              thumbnail: 1,
+              video: 1,
+              createdAt: 1,
+              _id: 0,
+            },
+          },
+          {
+            $sort: {
+              createdAt: -1, // Sort by createdAt in descending order
             },
           },
         ],
@@ -380,10 +417,10 @@ const getUserPlaylist = asyncHandler(async (req, res) => {
     },
     {
       $project: {
-        totalVideos: 1,
-        _id: 1,
-        name: 1,
         videos: 1,
+        totalVideos: 1,
+        name: 1,
+        _id: 1,
       },
     },
   ]);
