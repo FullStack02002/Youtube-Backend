@@ -68,7 +68,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
         updatedAt: 1,
         isPublished: 1,
         views: 1,
-        commentSection:1,
+        commentSection: 1,
       },
     }
   );
@@ -83,9 +83,6 @@ const getAllVideos = asyncHandler(async (req, res) => {
       },
     });
   }
-
-
-
 
   if (sortBy && sortType) {
     pipeline.push({
@@ -146,7 +143,7 @@ const publishAVideo = asyncHandler(async (req, res) => {
     duration: videoFile.duration,
     owner: req.user?._id,
     isPublished: false,
-    commentSection:true,
+    commentSection: true,
   });
 
   const videoUploaded = await Video.findById(video?._id);
@@ -196,7 +193,7 @@ const getVideoById = asyncHandler(async (req, res) => {
           },
           {
             $addFields: {
-              subscribersCount:{
+              subscribersCount: {
                 $size: "$subscribers",
               },
               isSubscribed: {
@@ -212,7 +209,7 @@ const getVideoById = asyncHandler(async (req, res) => {
           },
           {
             $project: {
-              _id:1,
+              _id: 1,
               username: 1,
               avatar: 1,
               subscribersCount: 1,
@@ -260,8 +257,8 @@ const getVideoById = asyncHandler(async (req, res) => {
         views: 1,
         likesCount: 1,
         isLiked: 1,
-        thumbnail:1,
-        commentSection:1,
+        thumbnail: 1,
+        commentSection: 1,
       },
     },
   ]);
@@ -270,13 +267,6 @@ const getVideoById = asyncHandler(async (req, res) => {
     return res.status(404).json({ message: "Video not found" });
   }
 
-  //increment views if video fetched succesfully
-
-  await Video.findByIdAndUpdate(videoId, {
-    $inc: {
-      views: 1,
-    },
-  });
 
   //add the video to watch history
 
@@ -289,6 +279,29 @@ const getVideoById = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(new ApiResponse(200, video[0], "video details fetched successfully"));
+});
+
+const incrementViewCount = asyncHandler(async (req, res) => {
+  const { videoId } = req.params;
+
+  if (!isValidObjectId(videoId)) {
+    throw new ApiError(400, "Invalid Video Id");
+  }
+  const video = await Video.findById(videoId);
+
+  if (!video) {
+    throw new ApiError(404, "Video not found");
+  }
+  await Video.findByIdAndUpdate(videoId, {
+    $inc: {
+      views: 1,
+    },
+  });
+
+  const updatedVideo= await Video.findById(videoId);
+
+  return res.status(200)
+  .json(new ApiResponse(200,updatedVideo,"views incremented successfully"));
 });
 
 const deleteVideo = asyncHandler(async (req, res) => {
@@ -470,39 +483,48 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
     );
 });
 
-const toggleCommentSection=asyncHandler(async(req,res)=>{
-  const {videoId}=req.params;
-  if(!isValidObjectId(videoId)){
-    throw new ApiError(400,"Invalid video Id");
-    }
+const toggleCommentSection = asyncHandler(async (req, res) => {
+  const { videoId } = req.params;
+  if (!isValidObjectId(videoId)) {
+    throw new ApiError(400, "Invalid video Id");
+  }
 
-    const video=await Video.findById(videoId);
-    if(!video){
-      throw new ApiError(404,"Video not found");
-    }
+  const video = await Video.findById(videoId);
+  if (!video) {
+    throw new ApiError(404, "Video not found");
+  }
 
-    if(video?.owner.toString()!==req.user?._id.toString()){
-      throw new ApiError(400,"You cant toggle comment section as you are not an owner");
-    }
+  if (video?.owner.toString() !== req.user?._id.toString()) {
+    throw new ApiError(
+      400,
+      "You cant toggle comment section as you are not an owner"
+    );
+  }
 
-    const toggleCommentSection=await Video.findByIdAndUpdate(videoId,{
-      $set:{
-        commentSection:!video.commentSection
-      }
-    },{new:true})
+  const toggleCommentSection = await Video.findByIdAndUpdate(
+    videoId,
+    {
+      $set: {
+        commentSection: !video.commentSection,
+      },
+    },
+    { new: true }
+  );
 
-    if(!toggleCommentSection){
-      throw new ApiError(500,"Error toggling comment section");
-    }
+  if (!toggleCommentSection) {
+    throw new ApiError(500, "Error toggling comment section");
+  }
 
-    return res.status(200).json(new ApiResponse(
-      200,
-      {commentSection:toggleCommentSection.commentSection},
-      "Comment section toggled successfully"
-    ))
-
-
-})
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { commentSection: toggleCommentSection.commentSection },
+        "Comment section toggled successfully"
+      )
+    );
+});
 
 export {
   publishAVideo,
@@ -512,4 +534,5 @@ export {
   getAllVideos,
   togglePublishStatus,
   toggleCommentSection,
+  incrementViewCount
 };

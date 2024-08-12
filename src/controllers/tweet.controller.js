@@ -52,12 +52,10 @@ const deleteTweet = asyncHandler(async (req, res) => {
 
   await Like.deleteMany({
     tweet:tweetId,
-    likedBy:req.user?._id,
   })
 
   await Comment.deleteMany({
     tweet:tweetId,
-    owner:req.user?._id
   })
 
   return res
@@ -99,7 +97,7 @@ const updateTweet = asyncHandler(async (req, res) => {
     }
   );
 
-  if (!updateTweet) {
+  if (!updatedTweet) {
     throw new ApiError(500, "Failed to Update Tweet Try Again");
   }
 

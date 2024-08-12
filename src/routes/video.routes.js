@@ -8,7 +8,10 @@ import {
   togglePublishStatus,
   toggleCommentSection,
   updateVideo,
+  incrementViewCount
 } from "../controllers/video.controller.js";
+
+import { incrementViewCountLimiter } from "../ratelimiters/video.js";
 
 import { Router } from "express";
 
@@ -29,6 +32,7 @@ router
   .get(verifyJWT, getVideoById)
   .delete(verifyJWT, deleteVideo)
   .patch(verifyJWT,upload.single("thumbnail"),updateVideo)
+  .post(verifyJWT,incrementViewCountLimiter,incrementViewCount);
 
 
   router.route("/toggle/publish/:videoId").patch(verifyJWT,togglePublishStatus);

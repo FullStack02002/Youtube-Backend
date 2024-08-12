@@ -58,7 +58,6 @@ const deleteTweetComment = asyncHandler(async (req, res) => {
 
   await Like.deleteMany({
     comment: tweetCommentId,
-    likedBy: req.user?._id,
   });
 
   return res
