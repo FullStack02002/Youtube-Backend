@@ -1,9 +1,12 @@
-
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { User } from "../models/user.model.js";
-import { uploadOnCloudinary ,deleteFromCloudinary} from "../utils/cloudinary.js";
+import { watchHistory } from "../models/watchHistory.model.js";
+import {
+  uploadOnCloudinary,
+  deleteFromCloudinary,
+} from "../utils/cloudinary.js";
 import { ensureHttps } from "../utils/ensureHttps.js";
 
 import mongoose from "mongoose";
@@ -41,7 +44,9 @@ const registerUser = asyncHandler(async (req, res) => {
   //console.log("email: ", email);
 
   if (
-    [fullName, email, username, password].some((field) => !field || field?.trim() === "")
+    [fullName, email, username, password].some(
+      (field) => !field || field?.trim() === ""
+    )
   ) {
     throw new ApiError(400, "All fields are required");
   }
@@ -137,8 +142,8 @@ const loginUser = asyncHandler(async (req, res) => {
   const options = {
     httpOnly: true,
     secure: process.env.NODE_ENV, // Set to true in production
-    sameSite: 'None', // Adjust as needed (Strict, Lax, None)
-    path: '/' // Ensure cookies are sent across your site
+    sameSite: "None", // Adjust as needed (Strict, Lax, None)
+    path: "/", // Ensure cookies are sent across your site
   };
 
   return res
@@ -172,9 +177,9 @@ const logoutUser = asyncHandler(async (req, res) => {
   );
   const options = {
     httpOnly: true,
-    secure: process.env.NODE_ENV,// Set to true in production
-    sameSite: 'None', // Adjust as needed (Strict, Lax, None)
-    path: '/' // Ensure cookies are cleared across your site
+    secure: process.env.NODE_ENV, // Set to true in production
+    sameSite: "None", // Adjust as needed (Strict, Lax, None)
+    path: "/", // Ensure cookies are cleared across your site
   };
 
   return res
@@ -235,7 +240,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 const changeCurrentPassword = asyncHandler(async (req, res) => {
   const { oldPassword, newPassword } = req.body;
 
-  if(!oldPassword || !newPassword){
+  if (!oldPassword || !newPassword) {
     throw new ApiError(400, "Please provide both old and new passwords");
   }
 
@@ -256,7 +261,6 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
 });
 
 const getCurrentUser = asyncHandler(async (req, res) => {
-
   return res
     .status(200)
     .json(new ApiResponse(200, req?.user, "User fetched Succesfully"));
@@ -280,7 +284,7 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
     { new: true }
   ).select("-password");
 
-  if(!user){
+  if (!user) {
     throw new ApiError(404, "User Not Found");
   }
 
@@ -296,9 +300,8 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Avatar File is Missing");
   }
 
-  const previousAvatarUrl=req.user?.avatar;
+  const previousAvatarUrl = req.user?.avatar;
 
-  
   const avatar = await uploadOnCloudinary(avatarLocalPath);
 
   if (!avatar.url) {
@@ -317,24 +320,22 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     }
   ).select("-password");
 
-//const url = 'https://res.cloudinary.com/your_cloud_name/image/upload/v1574861160/sample_public_id.jpg';
-//url fomat is like this and we need to extract public id to delete previous avatar Image
+  //const url = 'https://res.cloudinary.com/your_cloud_name/image/upload/v1574861160/sample_public_id.jpg';
+  //url fomat is like this and we need to extract public id to delete previous avatar Image
 
-  
-    const  getPublicIdFromUrl = (url) => {
-      const parts = url.split('/');
-      const filename = parts.pop();
-      const publicId = filename.split('.')[0];
-      console.log(publicId)
-      return publicId;
-    };
-  
+  const getPublicIdFromUrl = (url) => {
+    const parts = url.split("/");
+    const filename = parts.pop();
+    const publicId = filename.split(".")[0];
+    console.log(publicId);
+    return publicId;
+  };
 
   //getting previousAvatarPublicId
   const previousAvatarPublicId = getPublicIdFromUrl(previousAvatarUrl);
 
   //deleting previous file which was uploaded on cloudinary
-  if(previousAvatarPublicId){
+  if (previousAvatarPublicId) {
     await deleteFromCloudinary(previousAvatarPublicId);
   }
 
@@ -350,7 +351,7 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
     return new ApiError(400, "Cover Image File is Missing");
   }
 
-  const previousCoverImageUrl=req.user?.coverImage;
+  const previousCoverImageUrl = req.user?.coverImage;
 
   const coverImage = await uploadOnCloudinary(coverImageLocalPath);
 
@@ -361,156 +362,189 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
   const user = await User.findByIdAndUpdate(
     req.user?._id,
     {
-      $set: {coverImage:ensureHttps(coverImage.url)}
+      $set: { coverImage: ensureHttps(coverImage.url) },
     },
     {
       new: true,
     }
   ).select("-password");
-  
-    const getPublicIdFromUrl = (url) => {
-      const parts = url.split('/');
-      const filename = parts.pop();
-      const publicId = filename.split('.')[0];
-      return publicId;
-    };
-  
+
+  const getPublicIdFromUrl = (url) => {
+    const parts = url.split("/");
+    const filename = parts.pop();
+    const publicId = filename.split(".")[0];
+    return publicId;
+  };
 
   const previousCoverImagePublicId = getPublicIdFromUrl(previousCoverImageUrl);
 
-  if(previousCoverImagePublicId){
+  if (previousCoverImagePublicId) {
     await deleteFromCloudinary(previousCoverImagePublicId);
   }
 
-  return res.status(200).json(new ApiResponse(200,user,"Cover Image Updated Successfully"))
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user, "Cover Image Updated Successfully"));
 });
 
-const getUserChannelProfile = asyncHandler(async(req, res) => {
-  const {username} = req.params
+const getUserChannelProfile = asyncHandler(async (req, res) => {
+  const { username } = req.params;
 
   if (!username?.trim()) {
-      throw new ApiError(400, "username is missing")
+    throw new ApiError(400, "username is missing");
   }
 
   const channel = await User.aggregate([
-      {
-          $match: {
-              username: username?.toLowerCase()
-          }
+    {
+      $match: {
+        username: username?.toLowerCase(),
       },
-      {
-          $lookup: {
-              from: "subscriptions",
-              localField: "_id",
-              foreignField: "channel",
-              as: "subscribers"
-          }
+    },
+    {
+      $lookup: {
+        from: "subscriptions",
+        localField: "_id",
+        foreignField: "channel",
+        as: "subscribers",
       },
-      {
-          $lookup: {
-              from: "subscriptions",
-              localField: "_id",
-              foreignField: "subscriber",
-              as: "subscribedTo"
-          }
+    },
+    {
+      $lookup: {
+        from: "subscriptions",
+        localField: "_id",
+        foreignField: "subscriber",
+        as: "subscribedTo",
       },
-      {
-          $addFields: {
-              subscribersCount: {
-                  $size: "$subscribers"
-              },
-              channelsSubscribedToCount: {
-                  $size: "$subscribedTo"
-              },
-              isSubscribed: {
-                  $cond: {
-                      if: {$in: [req.user?._id, "$subscribers.subscriber"]},
-                      then: true,
-                      else: false
-                  }
-              }
-          }
+    },
+    {
+      $addFields: {
+        subscribersCount: {
+          $size: "$subscribers",
+        },
+        channelsSubscribedToCount: {
+          $size: "$subscribedTo",
+        },
+        isSubscribed: {
+          $cond: {
+            if: { $in: [req.user?._id, "$subscribers.subscriber"] },
+            then: true,
+            else: false,
+          },
+        },
       },
-      {
-          $project: {
-              fullName: 1,
-              username: 1,
-              subscribersCount: 1,
-              channelsSubscribedToCount: 1,
-              isSubscribed: 1,
-              avatar: 1,
-              coverImage: 1,
-              email: 1
-
-          }
-      }
-  ])
+    },
+    {
+      $project: {
+        fullName: 1,
+        username: 1,
+        subscribersCount: 1,
+        channelsSubscribedToCount: 1,
+        isSubscribed: 1,
+        avatar: 1,
+        coverImage: 1,
+        email: 1,
+      },
+    },
+  ]);
 
   if (!channel?.length) {
-      throw new ApiError(404, "channel does not exists")
+    throw new ApiError(404, "channel does not exists");
   }
 
   return res
-  .status(200)
-  .json(
+    .status(200)
+    .json(
       new ApiResponse(200, channel[0], "User channel fetched successfully")
-  )
-})
+    );
+});
 
-const getWatchHistory = asyncHandler(async(req, res) => {
-  const user = await User.aggregate([
-      {
-          $match: {
-              _id: new mongoose.Types.ObjectId(req.user._id)
-          }
+const getWatchHistory = asyncHandler(async (req, res) => {
+  const watchhistory = await watchHistory.aggregate([
+    {
+      $match: {
+        userId: new mongoose.Types.ObjectId(req?.user?._id)
       },
-      {
-          $lookup: {
-              from: "videos",
-              localField: "watchHistory",
+    },
+    {
+      $lookup: {
+        from: "videos",
+        localField: "videoId",
+        foreignField: "_id",
+        as: "video",
+        pipeline: [
+          {
+            $lookup: {
+              from: "users",
+              localField: "owner",
               foreignField: "_id",
-              as: "watchHistory",
+              as: "owner",
               pipeline: [
-                  {
-                      $lookup: {
-                          from: "users",
-                          localField: "owner",
-                          foreignField: "_id",
-                          as: "owner",
-                          pipeline: [
-                              {
-                                  $project: {
-                                      fullName: 1,
-                                      username: 1,
-                                      avatar: 1
-                                  }
-                              }
-                          ]
-                      }
+                {
+                  $project: {
+                    _id: 1,
+                    username: 1,
+                    avatar: 1,
+                    fullName: 1,
                   },
-                  {
-                      $addFields:{
-                          owner:{
-                              $first: "$owner"
-                          }
-                      }
-                  }
-              ]
-          }
-      }
-  ])
+                },
+              ],
+            },
+          },
+          {
+            $addFields: {
+              owner: {
+                $first: "$owner",
+              },
+            },
+          },
+          {
+            $project: {
+              _id: 1,
+              owner: 1,
+              title: 1,
+              thumbnail: 1,
+              createdAt: 1,
+              duration: 1,
+            },
+          },
+        ],
+      },
+    },
+    {
+      $addFields: {
+        video: {
+          $first: "$video",
+        },
+      },
+    },
+    {
+      $project: {
+        _id: 1,
+        createdAt: 1,
+        video: 1,
+      },
+    },
+  ]);
 
   return res
-  .status(200)
-  .json(
+    .status(200)
+    .json(
       new ApiResponse(
-          200,
-          user[0].watchHistory,
-          "Watch history fetched successfully"
+        200,
+        watchhistory,
+        "Watch history fetched successfully"
       )
-  )
-})
+    );
+});
 
+const deleteWatchHistory=asyncHandler(async(req,res)=>{
+  const result= await watchHistory.deleteMany(
+    {
+      userId:req?.user?._id
+    }
+  )
+  return res.status(200).json(new ApiResponse(200,result,"Watch History Deleted Succesfully"));
+})
 
 
 
@@ -525,5 +559,7 @@ export {
   updateUserCoverImage,
   getUserChannelProfile,
   getWatchHistory,
-  refreshAccessToken
+  deleteWatchHistory,
+  refreshAccessToken,
+  
 };

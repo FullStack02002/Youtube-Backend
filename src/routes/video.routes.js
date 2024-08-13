@@ -8,7 +8,9 @@ import {
   togglePublishStatus,
   toggleCommentSection,
   updateVideo,
-  incrementViewCount
+  incrementViewCount,
+  addVideoToWatchHistory,
+  deleteParticularVideoFromWatchHistory,
 } from "../controllers/video.controller.js";
 
 import { incrementViewCountLimiter } from "../ratelimiters/video.js";
@@ -17,26 +19,32 @@ import { Router } from "express";
 
 const router = Router();
 
-router.route("/").get(getAllVideos)
-.post(
-  verifyJWT,
-  upload.fields([
-    { name: "videoFile", maxCount: 1 },
-    { name: "thumbnail", maxCount: 1 },
-  ]),
-  publishAVideo
-);
+router
+  .route("/")
+  .get(getAllVideos)
+  .post(
+    verifyJWT,
+    upload.fields([
+      { name: "videoFile", maxCount: 1 },
+      { name: "thumbnail", maxCount: 1 },
+    ]),
+    publishAVideo
+  );
 
 router
   .route("/v/:videoId")
   .get(verifyJWT, getVideoById)
   .delete(verifyJWT, deleteVideo)
-  .patch(verifyJWT,upload.single("thumbnail"),updateVideo)
-  .post(verifyJWT,incrementViewCountLimiter,incrementViewCount);
+  .patch(verifyJWT, upload.single("thumbnail"), updateVideo)
+  .post(verifyJWT, incrementViewCountLimiter, incrementViewCount);
 
+router
+  .route("/v/wh/:videoId")
+  .post(verifyJWT, addVideoToWatchHistory)
 
-  router.route("/toggle/publish/:videoId").patch(verifyJWT,togglePublishStatus);
-  router.route("/toggle/comment/:videoId").patch(verifyJWT,toggleCommentSection);
-  
+  router.route("/v/wh/:id").delete(verifyJWT,deleteParticularVideoFromWatchHistory)
+
+router.route("/toggle/publish/:videoId").patch(verifyJWT, togglePublishStatus);
+router.route("/toggle/comment/:videoId").patch(verifyJWT, toggleCommentSection);
 
 export default router;

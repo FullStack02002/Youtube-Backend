@@ -1,9 +1,9 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
-import { User } from "../models/user.model.js";
 import { Video } from "../models/video.model.js";
 import { Like } from "../models/like.model.js";
 import { Comment } from "../models/comment.model.js";
+import { watchHistory } from "../models/watchHistory.model.js";
 
 import {
   uploadOnCloudinary,
@@ -270,11 +270,11 @@ const getVideoById = asyncHandler(async (req, res) => {
 
   //add the video to watch history
 
-  await User.findByIdAndUpdate(req.user?._id, {
-    $addToSet: {
-      watchHistory: videoId,
-    },
-  });
+  // await User.findByIdAndUpdate(req.user?._id, {
+  //   $addToSet: {
+  //     watchHistory: videoId,
+  //   },
+  // });
 
   return res
     .status(200)
@@ -303,6 +303,54 @@ const incrementViewCount = asyncHandler(async (req, res) => {
   return res.status(200)
   .json(new ApiResponse(200,updatedVideo,"views incremented successfully"));
 });
+
+const addVideoToWatchHistory=asyncHandler(async(req,res)=>{
+  const {videoId}=req.params;
+
+  if(!isValidObjectId(videoId)){
+    throw new ApiError(400,"Invalid Video Id");
+  }
+  const video=await Video.findById(videoId);
+
+  if(!video){
+    throw new ApiError(404,"Video not found");
+  }
+
+  // create watch history
+
+  const watchhistory=await watchHistory.create({
+    userId:req.user?._id,
+    videoId
+  })
+
+  if(!watchhistory){
+    throw new ApiError(500,"Failed to add video to watch history")
+  }
+
+  return res.status(200).json(new ApiResponse(200,watchhistory,"video added to watch history succesfull"));
+
+
+
+
+
+
+})
+
+const deleteParticularVideoFromWatchHistory=asyncHandler(async(req,res)=>{
+  const {id}=req.params;
+
+  if(!isValidObjectId){
+    throw new ApiError(400,"Invalid  Id");
+  }
+
+  const result=await watchHistory.findByIdAndDelete(id);
+
+  if(!result){
+    throw new ApiError(400,"watch history entry not found")
+  }
+
+  return res.status(200).json(new ApiResponse(200,result,"Video Deleted Succesfully"));
+})
 
 const deleteVideo = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
@@ -534,5 +582,7 @@ export {
   getAllVideos,
   togglePublishStatus,
   toggleCommentSection,
-  incrementViewCount
+  incrementViewCount,
+  addVideoToWatchHistory,
+  deleteParticularVideoFromWatchHistory
 };
