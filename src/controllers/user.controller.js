@@ -462,7 +462,7 @@ const getWatchHistory = asyncHandler(async (req, res) => {
   const watchhistory = await watchHistory.aggregate([
     {
       $match: {
-        userId: new mongoose.Types.ObjectId(req?.user?._id)
+        userId: new mongoose.Types.ObjectId(req?.user?._id),
       },
     },
     {
@@ -505,6 +505,8 @@ const getWatchHistory = asyncHandler(async (req, res) => {
               thumbnail: 1,
               createdAt: 1,
               duration: 1,
+              views: 1,
+              description:1,
             },
           },
         ],
@@ -524,29 +526,28 @@ const getWatchHistory = asyncHandler(async (req, res) => {
         video: 1,
       },
     },
+    {
+      $sort: {
+        createdAt: -1,
+      },
+    },
   ]);
 
   return res
     .status(200)
     .json(
-      new ApiResponse(
-        200,
-        watchhistory,
-        "Watch history fetched successfully"
-      )
+      new ApiResponse(200, watchhistory, "Watch history fetched successfully")
     );
 });
 
-const deleteWatchHistory=asyncHandler(async(req,res)=>{
-  const result= await watchHistory.deleteMany(
-    {
-      userId:req?.user?._id
-    }
-  )
-  return res.status(200).json(new ApiResponse(200,result,"Watch History Deleted Succesfully"));
-})
-
-
+const deleteWatchHistory = asyncHandler(async (req, res) => {
+  const result = await watchHistory.deleteMany({
+    userId: req?.user?._id,
+  });
+  return res
+    .status(200)
+    .json(new ApiResponse(200, result, "Watch History Deleted Succesfully"));
+});
 
 export {
   registerUser,
@@ -561,5 +562,4 @@ export {
   getWatchHistory,
   deleteWatchHistory,
   refreshAccessToken,
-  
 };

@@ -10,4 +10,14 @@ const incrementViewCountLimiter = rateLimit({
   });
 
 
-  export {incrementViewCountLimiter}
+  // Rate limiter for add Video to Watch History
+
+  const addVideoToWatchHistoryLimiter=rateLimit({
+    windowMs:24*60*60*1000,
+    max:1,
+    message:"Too many requests from this IP to add video to watch history, please try again later.",
+    keyGenerator:(req)=>req.params.videoId
+  })
+
+
+  export {incrementViewCountLimiter,addVideoToWatchHistoryLimiter}

@@ -13,7 +13,10 @@ import {
   deleteParticularVideoFromWatchHistory,
 } from "../controllers/video.controller.js";
 
-import { incrementViewCountLimiter } from "../ratelimiters/video.js";
+import {
+  incrementViewCountLimiter,
+  addVideoToWatchHistoryLimiter,
+} from "../ratelimiters/video.js";
 
 import { Router } from "express";
 
@@ -40,9 +43,11 @@ router
 
 router
   .route("/v/wh/:videoId")
-  .post(verifyJWT, addVideoToWatchHistory)
+  .post(verifyJWT, addVideoToWatchHistoryLimiter, addVideoToWatchHistory);
 
-  router.route("/v/wh/:id").delete(verifyJWT,deleteParticularVideoFromWatchHistory)
+router
+  .route("/v/wh/:id")
+  .delete(verifyJWT, deleteParticularVideoFromWatchHistory);
 
 router.route("/toggle/publish/:videoId").patch(verifyJWT, togglePublishStatus);
 router.route("/toggle/comment/:videoId").patch(verifyJWT, toggleCommentSection);
