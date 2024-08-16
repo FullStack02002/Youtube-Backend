@@ -55,89 +55,85 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Channel Not Found");
   }
 
-  const subscribers=await Subscription.aggregate([
+  const subscribers = await Subscription.aggregate([
     {
       $match: {
-        channel:new mongoose.Types.ObjectId(channelId)
-      }
-  },{
+        channel: new mongoose.Types.ObjectId(channelId),
+      },
+    },
+    {
       $lookup: {
         from: "users",
         localField: "subscriber",
         foreignField: "_id",
         as: "subscribers",
-        pipeline:[
+        pipeline: [
           {
-            $lookup:{
-              from:"subscriptions",
-              localField:"_id",
-              foreignField:"channel",
-              as:"subscribedToSubscriber"
-            }
+            $lookup: {
+              from: "subscriptions",
+              localField: "_id",
+              foreignField: "channel",
+              as: "subscribedToSubscriber",
+            },
           },
           {
-            $addFields:{
-              subscribedToSubscriber:{
-                $cond:{
-                  if:{
-                    $in:[new mongoose.Types.ObjectId(channelId),"$subscribedToSubscriber.subscriber"]
+            $addFields: {
+              subscribedToSubscriber: {
+                $cond: {
+                  if: {
+                    $in: [
+                      new mongoose.Types.ObjectId(channelId),
+                      "$subscribedToSubscriber.subscriber",
+                    ],
                   },
-                  then:true,
-                  else:false
-                }
+                  then: true,
+                  else: false,
+                },
               },
-              subscriptionCount:{
-                $size:"$subscribedToSubscriber"
-              }
-            }
+              subscriptionCount: {
+                $size: "$subscribedToSubscriber",
+              },
+            },
           },
           {
-            $project:{
-              subscribedToSubscriber:1,
-              subscriptionCount:1,
-              _id:0,
-              username:1,
-              fullName:1,
-              avatar:1,
-              _id:0
-            }
-            
+            $project: {
+              subscribedToSubscriber: 1,
+              subscriptionCount: 1,
+              _id: 0,
+              username: 1,
+              fullName: 1,
+              avatar: 1,
+              _id: 0,
+            },
           },
-        ]
-      }
-  },
-  {
-    $addFields:{
-        subscribers:{
-            $first:"$subscribers"
-        }
-    }
-  },
+        ],
+      },
+    },
+    {
+      $addFields: {
+        subscribers: {
+          $first: "$subscribers",
+        },
+      },
+    },
     {
       $project: {
-        subscribers:1,
-        _id:0
-      }
-    }
-  
-  ])
-  return res.status(200).json(new ApiResponse(200,subscribers,"Subscriber Fetched Succesfully"));
+        subscribers: 1,
+        _id: 0,
+      },
+    },
+  ]);
+  return res
+    .status(200)
+    .json(new ApiResponse(200, subscribers, "Subscriber Fetched Succesfully"));
 });
 
-const getSubscribedChannels=asyncHandler(async(req,res)=>{
-  const {subscriberId}=req.params;
-  if(!isValidObjectId(subscriberId)){
-    throw new ApiError(400,"Invalid Subscriber Id")
-  }
-  const subscriber=await User.findById(subscriberId);
-  if(!subscriber){
-    throw new ApiError(404,"Subscriber Not Found")
-  }
-
-  const subscribedChannels=await Subscription.aggregate([{
-    $match: {
-      subscriber:new mongoose.Types.ObjectId(subscriberId)
-    }
+const getSubscribedChannels = asyncHandler(async (req, res) => {
+  const subscribedChannels = await Subscription.aggregate([
+    {
+      $match: {
+        subscriber: new mongoose.Types.ObjectId(req?.user?._id),
+      },
     },
     {
       $lookup: {
@@ -145,68 +141,101 @@ const getSubscribedChannels=asyncHandler(async(req,res)=>{
         localField: "channel",
         foreignField: "_id",
         as: "subscribedChannel",
-        pipeline:[
+        pipeline: [
           {
-            $lookup:{
-              from:"videos",
-              localField:"_id",
-              foreignField:"owner",
-              as:"videos",
-              pipeline:[
+            $lookup: {
+              from: "videos",
+              localField: "_id",
+              foreignField: "owner",
+              as: "videos",
+              pipeline: [
                 {
-                  $project:{
-                    _id:1,
-                    videoFile:1,
-                    thumbnail:1,
-                    owner:1,
-                    title:1,
-                    description:1,
-                    createdAt:1,
-                    duration:1
-                  }
-                }
-              ]
-            }
-          },{
-            $addFields:{
-              LatestVideo:{
-                $last:"$videos"
-              }
-            }
-          },{
-            $project:{
-              _id:1,
-              username:1,
-              fullName:1,
-              avatar:1,
-              LatestVideo:1,
-              thumbnail:1,
-              owner:1,
-              title:1,
-              description:1,
-              duration:1,
-              createdAt:1
-              
-            }
-          }
-        ]
-      }
-      },{
+                  $lookup: {
+                    from: "subscriptions",
+                    localField: "owner",
+                    foreignField: "channel",
+                    as: "subscriber",
+                  },
+                },
+                {
+                  $addFields: {
+                    subscriptionsCount: {
+                      $size: "$subscriber",
+                    },
+                  },
+                },
+                {
+                  $project: {
+                    _id: 1,
+                    videoFile: 1,
+                    thumbnail: 1,
+                    title: 1,
+                    description: 1,
+                    createdAt: 1,
+                    duration: 1,
+                    views: 1,
+                    subscriptionsCount: 1,
+                  },
+                },
+              ],
+            },
+          },
+          {
+            $addFields: {
+              LatestVideo: {
+                $last: "$videos",
+              },
+            },
+          },
+          {
+            $project: {
+              _id: 1,
+              username: 1,
+              fullName: 1,
+              avatar: 1,
+              LatestVideo: 1,
+              thumbnail: 1,
+              owner: 1,
+              title: 1,
+              description: 1,
+              duration: 1,
+              createdAt: 1,
+              views: 1,
+            },
+          },
+        ],
+      },
+    },
+    {
       $addFields: {
-        subscribedChannel:{
-          $first:"$subscribedChannel"
-        }
-      }
-      },{
+        subscribedChannel: {
+          $first: "$subscribedChannel",
+        },
+      },
+    },
+    {
       $project: {
-        subscribedChannel:1,
-        _id:0
+        subscribedChannel: 1,
+        _id: 0,
+        createdAt:1
+      },
+    },
+    {
+      $sort:{
+        createdAt: -1
       }
-      }
-   
-  ])
+    }
+  ]);
 
-  return res.status(200).json(new ApiResponse(200,subscribedChannels,"Subscribed Channels Fetched Succesfully"))
-})
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        subscribedChannels,
+        "Subscribed Channels Fetched Succesfully"
+      )
+    );
+});
 
-export { toggleSubscription ,getUserChannelSubscribers,getSubscribedChannels};
+export { toggleSubscription, getUserChannelSubscribers, getSubscribedChannels };
