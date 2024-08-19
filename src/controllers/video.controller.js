@@ -199,7 +199,7 @@ const getVideoById = asyncHandler(async (req, res) => {
               isSubscribed: {
                 $cond: {
                   if: {
-                    $in: [req.user?._id, "$subscribers.subscriber"],
+                    $in: [req?.user?._id, "$subscribers.subscriber"],
                   },
                   then: true,
                   else: false,
@@ -238,7 +238,7 @@ const getVideoById = asyncHandler(async (req, res) => {
         isLiked: {
           $cond: {
             if: {
-              $in: [req.user?._id, "$likes.likedBy"],
+              $in: [req?.user?._id, "$likes.likedBy"],
             },
             then: true,
             else: false,
@@ -268,18 +268,15 @@ const getVideoById = asyncHandler(async (req, res) => {
   }
 
 
-  //add the video to watch history
-
-  // await User.findByIdAndUpdate(req.user?._id, {
-  //   $addToSet: {
-  //     watchHistory: videoId,
-  //   },
-  // });
 
   return res
     .status(200)
     .json(new ApiResponse(200, video[0], "video details fetched successfully"));
 });
+
+
+
+
 
 const incrementViewCount = asyncHandler(async (req, res) => {
   const { videoId } = req.params;

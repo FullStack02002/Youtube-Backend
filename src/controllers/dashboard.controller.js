@@ -81,17 +81,7 @@ const getChannelVideos=asyncHandler(async(req,res)=>{
           owner:userId
         }
       },{
-        $lookup: {
-          from: "likes",
-          localField: "_id",
-          foreignField: "video",
-          as: "likes"
-        }
-      },{
         $addFields: {
-          LikesCount: {
-            $size:"$likes"
-            }, 
           createdAt:{
             $dateToParts:{
               date:"$createdAt"
@@ -111,7 +101,7 @@ const getChannelVideos=asyncHandler(async(req,res)=>{
           description:1,
           isPublished:1,
           createdAt:1,
-          LikesCount:1
+          commentSection:1,
         }
       }])
 

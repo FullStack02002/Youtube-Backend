@@ -36,7 +36,7 @@ router
 
 router
   .route("/v/:videoId")
-  .get(verifyJWT, getVideoById)
+  .get( verifyJWT,getVideoById)
   .delete(verifyJWT, deleteVideo)
   .patch(verifyJWT, upload.single("thumbnail"), updateVideo)
   .post(verifyJWT, incrementViewCountLimiter, incrementViewCount);
