@@ -8,7 +8,7 @@ import { Like } from "../models/like.model.js";
 
 //create Reply
 const createReply = asyncHandler(async (req, res) => {
-  const {commentId}=req.params;
+  const {commentId,videoId}=req.params;
   const { content } = req.body;
 
   if ([content, commentId].some((field) => field?.trim() === "")) {
@@ -24,6 +24,7 @@ const createReply = asyncHandler(async (req, res) => {
     content,
     comment: commentId,
     repliedBy: req.user?._id,
+    video:videoId
   });
 
   if (!reply) {

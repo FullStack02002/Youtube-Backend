@@ -4,6 +4,7 @@ import { Video } from "../models/video.model.js";
 import { Like } from "../models/like.model.js";
 import { Comment } from "../models/comment.model.js";
 import { watchHistory } from "../models/watchHistory.model.js";
+import { Reply } from "../models/reply.model.js";
 
 import {
   uploadOnCloudinary,
@@ -394,13 +395,12 @@ const deleteVideo = asyncHandler(async (req, res) => {
   const videoPublicId = getPublicIdFromUrl(videoUrl);
   const thumbnailPublicId = getPublicIdFromUrl(thumbnailUrl);
 
-  // console.log(videoPublicId);
-  // console.log(thumbnailPublicId);
+  
 
   await deleteFromCloudinary(videoPublicId, "video");
   await deleteFromCloudinary(thumbnailPublicId);
 
-  //delete video likes
+  //delete video,videos Comment and videos Comment Replies likes
 
   await Like.deleteMany({
     video: videoId,
@@ -412,11 +412,20 @@ const deleteVideo = asyncHandler(async (req, res) => {
     video: videoId,
   });
 
-  // Remove video from users' watch history
-  // await User.updateMany(
-  //   { watchHistory: videoId },
-  //   { $pull: { watchHistory: videoId } }
-  // );
+  // Remove video from users watch history
+
+  await watchHistory.deleteMany({
+    videoId
+  })
+
+  // delete video comments replies
+
+  await Reply.deleteMany({
+    video:videoId,
+  })
+  
+
+  
 
   return res
     .status(200)

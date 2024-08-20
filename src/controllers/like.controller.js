@@ -40,7 +40,7 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
 });
 
 const toggleCommentLike = asyncHandler(async (req, res) => {
-  const { commentId } = req.params;
+  const { commentId,videoId } = req.params;
 
   if (!isValidObjectId(commentId)) {
     throw new ApiError(400, "Invalid comment id");
@@ -55,6 +55,7 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
   const likeAlready = await Like.findOne({
     comment: commentId,
     likedBy: req.user?._id,
+    video:videoId
   });
 
   if (likeAlready) {
@@ -65,6 +66,7 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
   await Like.create({
     comment: commentId,
     likedBy: req.user?._id,
+    video:videoId,
   });
 
   return res.status(200).json(new ApiResponse(200, { isLiked: true }));
@@ -101,7 +103,7 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
 });
 
 const toggleReplyLike = asyncHandler(async (req, res) => {
-  const { replyId } = req.params;
+  const { replyId,videoId } = req.params;
 
   if (!replyId) {
     throw new ApiError(400, "Invalid reply id");
@@ -125,6 +127,7 @@ const toggleReplyLike = asyncHandler(async (req, res) => {
   await Like.create({
     reply: replyId,
     likedBy: req.user?._id,
+    video:videoId
   });
 
   return res.status(200).json(new ApiResponse(200, { isLiked: true }));
