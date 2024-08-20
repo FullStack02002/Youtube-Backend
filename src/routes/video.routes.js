@@ -21,11 +21,18 @@ import {
 import { Router } from "express";
 
 const router = Router();
+// Custom middleware to set headers
+const setHeaders = (req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', 'https://youtube-fullstack-gamma.vercel.app');
+  // Add other headers if needed
+  next();
+};
 
 router.route("/").get(getAllVideos);
 
 router.route("/publish").post(
   verifyJWT,
+  setHeaders,
   upload.fields([
     { name: "videoFile", maxCount: 1 },
     { name: "thumbnail", maxCount: 1 },
