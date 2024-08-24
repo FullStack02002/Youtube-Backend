@@ -82,7 +82,7 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
                 $cond: {
                   if: {
                     $in: [
-                      new mongoose.Types.ObjectId(channelId),
+                      new mongoose.Types.ObjectId(req?.user?._id),
                       "$subscribedToSubscriber.subscriber",
                     ],
                   },
@@ -99,11 +99,10 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
             $project: {
               subscribedToSubscriber: 1,
               subscriptionCount: 1,
-              _id: 0,
+              _id: 1,
               username: 1,
               fullName: 1,
               avatar: 1,
-              _id: 0,
             },
           },
         ],
@@ -129,103 +128,92 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
 });
 
 const getSubscribedChannels = asyncHandler(async (req, res) => {
-  const subscribedChannels = await Subscription.aggregate([
-    {
-      $match: {
-        subscriber: new mongoose.Types.ObjectId(req?.user?._id),
-      },
-    },
-    {
-      $lookup: {
-        from: "users",
-        localField: "channel",
-        foreignField: "_id",
-        as: "subscribedChannel",
-        pipeline: [
-          {
-            $lookup: {
-              from: "videos",
-              localField: "_id",
-              foreignField: "owner",
-              as: "videos",
-              pipeline: [
-                {
-                  $lookup: {
-                    from: "subscriptions",
-                    localField: "owner",
-                    foreignField: "channel",
-                    as: "subscriber",
-                  },
-                },
-                {
-                  $addFields: {
-                    subscriptionsCount: {
-                      $size: "$subscriber",
-                    },
-                  },
-                },
-                {
-                  $project: {
-                    _id: 1,
-                    videoFile: 1,
-                    thumbnail: 1,
-                    title: 1,
-                    description: 1,
-                    createdAt: 1,
-                    duration: 1,
-                    views: 1,
-                    subscriptionsCount: 1,
-                  },
-                },
-              ],
-            },
-          },
-          {
-            $addFields: {
-              LatestVideo: {
-                $last: "$videos",
-              },
-            },
-          },
-          {
-            $project: {
-              _id: 1,
-              username: 1,
-              fullName: 1,
-              avatar: 1,
-              LatestVideo: 1,
-              thumbnail: 1,
-              owner: 1,
-              title: 1,
-              description: 1,
-              duration: 1,
-              createdAt: 1,
-              views: 1,
-            },
-          },
-        ],
-      },
-    },
-    {
-      $addFields: {
-        subscribedChannel: {
-          $first: "$subscribedChannel",
+  const subscribedChannels = await Subscription.aggregate([{
+    $match: {
+      subscriber:new mongoose.Types.ObjectId(req?.user?._id)
+    }
+  },{
+    $lookup: {
+      from: "users",
+      localField: "channel",
+      foreignField: "_id",
+      as: "subscribedChannel",
+      pipeline:[
+        {
+          $lookup:{
+            from:"subscriptions",
+            localField:"_id",
+            foreignField:"channel",
+            as:"subscriptions"
+          }
         },
-      },
-    },
-    {
-      $project: {
-        subscribedChannel: 1,
-        _id: 0,
-        createdAt:1
-      },
-    },
-    {
-      $sort:{
-        createdAt: -1
+        {
+          $addFields:{
+            "subscriptionsCount":{
+              $size:"$subscriptions"
+            }
+            
+          }
+        },{
+          $lookup:{
+            from:"videos",
+            localField:"_id",
+            foreignField:"owner",
+            as:"videos",
+            pipeline:[
+              {
+                $project:{
+                  _id:1,
+                  videoFile:1,
+                  thumbnail:1,
+                  title:1,
+                  description:1,
+                  isPublished:1,
+                  views:1,
+                  createdAt:1,
+                  duration:1
+                  
+                }
+              }
+            ]
+          }
+        },{
+          $addFields:{
+            "LatestVideo":{
+              $last:"$videos"
+            },
+          }
+        },{
+          $project:{
+            _id:1,
+            username:1,
+            avatar:1,
+            LatestVideo:1,
+            subscriptionsCount:1,
+            fullName:1
+            
+          }
+        }
+        
+      ]
+    }
+  },{
+    $addFields: {
+      "subscribedChannel":{
+        $first:"$subscribedChannel"
       }
     }
-  ]);
+  },{
+    $project: {
+      subscribedChannel:1,
+      createdAt:1,
+      _id:0
+    }
+  },{
+    $sort: {
+      "createdAt": -1
+    }
+  }]);
 
   return res
     .status(200)
