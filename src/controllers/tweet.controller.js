@@ -144,7 +144,7 @@ const getUsersTweet = asyncHandler(async (req, res) => {
     {
         $lookup:{
             from:"likes",
-            localField:"id",
+            localField:"_id",
             foreignField:"tweet",
             as:"likes"
         }
@@ -173,7 +173,8 @@ const getUsersTweet = asyncHandler(async (req, res) => {
             content:1,
             createdAt:1,
             owner:1,
-            likesCount:1
+            likesCount:1,
+            isLiked:1,
         }
     }
   ]);
