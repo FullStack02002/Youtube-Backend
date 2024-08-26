@@ -37,8 +37,9 @@ const uploadOnCloudinary = async (localFilePath) => {
   try {
     if (!localFilePath) return null;
     //upload the file on cloudinary
-    const response = await cloudinary.uploader.upload(localFilePath, {
+    const response = await cloudinary.uploader.upload_large(localFilePath, {
       resource_type: "auto",
+      chunk_size: 6000000,
       secure: true,
       transformation: [
         { quality: "auto", fetch_format: "auto" }, // Compression parameters
