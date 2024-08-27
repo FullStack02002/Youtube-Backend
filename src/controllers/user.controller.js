@@ -141,9 +141,9 @@ const loginUser = asyncHandler(async (req, res) => {
 
   const options = {
     httpOnly: true,
-    secure: process.env.NODE_ENV, // Set to true in production
-    sameSite: "None", // Adjust as needed (Strict, Lax, None)
-    path: "/", // Ensure cookies are sent across your site
+    secure: process.env.NODE_ENV, 
+    sameSite: "None", 
+    path: "/", 
   };
 
   return res
@@ -267,9 +267,9 @@ const getCurrentUser = asyncHandler(async (req, res) => {
 });
 
 const updateAccountDetails = asyncHandler(async (req, res) => {
-  const { fullName, username } = req.body;
+  const { fullName, username,email } = req.body;
 
-  if (!fullName || !username) {
+  if (!fullName || !username || !email) {
     throw new ApiError(400, "All Fields Are Required");
   }
 
@@ -279,6 +279,7 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
       $set: {
         fullName,
         username,
+        email
       },
     },
     { new: true }
