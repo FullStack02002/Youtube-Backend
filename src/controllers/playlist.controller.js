@@ -42,7 +42,7 @@ const updatePlaylist = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Playlist not found");
   }
 
-  if ([name, description].some((field) => field.trim() == "")) {
+  if (!name) {
     throw new ApiError(400, "Please provide all fields");
   }
   if (req.user?._id.toString() !== playlist.owner.toString()) {
