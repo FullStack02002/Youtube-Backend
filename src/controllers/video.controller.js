@@ -10,7 +10,6 @@ import {
   uploadOnCloudinary,
   deleteFromCloudinary,
 } from "../utils/cloudinary.js";
-import { ensureHttps } from "../utils/ensureHttps.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import mongoose, { isValidObjectId } from "mongoose";
 
@@ -139,8 +138,8 @@ const publishAVideo = asyncHandler(async (req, res) => {
   const video = await Video.create({
     title,
     description,
-    videoFile: ensureHttps(videoFile?.url),
-    thumbnail: ensureHttps(thumbnail?.url),
+    videoFile: videoFile?.secure_url,
+    thumbnail: thumbnail?.secure_url,
     duration: videoFile.duration,
     owner: req.user?._id,
     isPublished: false,
@@ -470,7 +469,7 @@ const updateVideo = asyncHandler(async (req, res) => {
     {
       title,
       description,
-      thumbnail: uploadedThumbnail?.url || previousUrl,
+      thumbnail: uploadedThumbnail?.secure_url || previousUrl,
     },
     { new: true }
   );

@@ -7,7 +7,6 @@ import {
   uploadOnCloudinary,
   deleteFromCloudinary,
 } from "../utils/cloudinary.js";
-import { ensureHttps } from "../utils/ensureHttps.js";
 
 import mongoose from "mongoose";
 
@@ -85,8 +84,8 @@ const registerUser = asyncHandler(async (req, res) => {
 
   const user = await User.create({
     fullName,
-    avatar: ensureHttps(avatar.url),
-    coverImage: ensureHttps(coverImage.url),
+    avatar: avatar.secure_url,
+    coverImage: avatar.secure_url,
     email,
     password,
     username: username.toLowerCase(),
@@ -313,7 +312,7 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     req.user?._id,
     {
       $set: {
-        avatar: ensureHttps(avatar.url),
+        avatar: avatar.secure_url,
       },
     },
     {
@@ -363,7 +362,7 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
   const user = await User.findByIdAndUpdate(
     req.user?._id,
     {
-      $set: { coverImage: ensureHttps(coverImage.url) },
+      $set: { coverImage: coverImage.secure_url },
     },
     {
       new: true,
