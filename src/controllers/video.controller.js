@@ -220,7 +220,6 @@ const getVideoById = asyncHandler(async (req, res) => {
       },
     },
     {
-      // Look up only likes associated with this video and not comments
       $lookup: {
         from: "likes",
         localField: "_id",
@@ -230,6 +229,7 @@ const getVideoById = asyncHandler(async (req, res) => {
           {
             $match: {
               comment: { $exists: false }, // Only select likes where 'comment' is not present (i.e., video likes)
+              reply:{$exists:false},
             },
           },
         ],
