@@ -34,7 +34,7 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
   await Like.create({
     video: videoId,
     likedBy: req.user?._id,
-    likeType:video,
+    likeType:"video",
   });
 
   return res.status(200).json(new ApiResponse(200, { isLiked: true }));
