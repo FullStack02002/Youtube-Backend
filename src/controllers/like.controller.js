@@ -34,6 +34,7 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
   await Like.create({
     video: videoId,
     likedBy: req.user?._id,
+    likeType:video,
   });
 
   return res.status(200).json(new ApiResponse(200, { isLiked: true }));
@@ -55,7 +56,7 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
   const likeAlready = await Like.findOne({
     comment: commentId,
     likedBy: req.user?._id,
-    video:videoId
+    video:videoId,
   });
 
   if (likeAlready) {
@@ -67,6 +68,7 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
     comment: commentId,
     likedBy: req.user?._id,
     video:videoId,
+    likeType:"comment"
   });
 
   return res.status(200).json(new ApiResponse(200, { isLiked: true }));
@@ -127,7 +129,8 @@ const toggleReplyLike = asyncHandler(async (req, res) => {
   await Like.create({
     reply: replyId,
     likedBy: req.user?._id,
-    video:videoId
+    video:videoId,
+    likeType:"reply"
   });
 
   return res.status(200).json(new ApiResponse(200, { isLiked: true }));
@@ -138,6 +141,7 @@ const getLikedVideos = asyncHandler(async (req, res) => {
         {
             $match: {
                 likedBy: new mongoose.Types.ObjectId(req.user?._id),
+                likeType:"video"
             },
         },
         {

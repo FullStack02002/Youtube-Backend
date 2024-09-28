@@ -21,6 +21,11 @@ const likeSchema = new Schema(
         reply:{
             type: Schema.Types.ObjectId,
             ref: "Reply"
+        },
+        likeType:{
+            type:String,
+            enum:["video","comment","reply"],
+            required:true
         }
     }, 
     {
