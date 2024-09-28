@@ -220,11 +220,19 @@ const getVideoById = asyncHandler(async (req, res) => {
       },
     },
     {
+      // Look up only likes associated with this video and not comments
       $lookup: {
         from: "likes",
         localField: "_id",
         foreignField: "video",
         as: "likes",
+        pipeline: [
+          {
+            $match: {
+              comment: { $exists: false }, // Only select likes where 'comment' is not present (i.e., video likes)
+            },
+          },
+        ],
       },
     },
     {
@@ -263,11 +271,9 @@ const getVideoById = asyncHandler(async (req, res) => {
     },
   ]);
 
-  if (!video) {
+  if (!video || video.length === 0) {
     return res.status(404).json({ message: "Video not found" });
   }
-
-
 
   return res
     .status(200)
