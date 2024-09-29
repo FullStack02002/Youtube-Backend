@@ -25,7 +25,6 @@ const likeSchema = new Schema(
         likeType:{
             type:String,
             enum:["video","comment","reply"],
-            required:true
         }
     }, 
     {
